@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/adminpanel.tsx","./src/components/luckywheel.tsx","./src/components/participantlist.tsx","./src/components/sparklebackground.tsx","./src/components/winnerlist.tsx","./src/components/winnermodal.tsx","./src/types/index.ts"],"version":"5.9.3"}
