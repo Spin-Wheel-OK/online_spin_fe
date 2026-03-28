@@ -1,4 +1,4 @@
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
 
 const AUTH_STORAGE_KEY = 'spin-wheel-admin-auth';
 const DEFAULT_USERNAME = 'admin';
@@ -45,10 +45,10 @@ export default function AdminAuth({ children }: AdminAuthProps) {
     setAuthed(isAuthenticated());
   }, []);
 
-  const hint = useMemo(
-    () => `Use ${ADMIN_USERNAME} / ${ADMIN_PASSWORD} or set VITE_ADMIN_USERNAME and VITE_ADMIN_PASSWORD.`,
-    []
-  );
+  // const hint = useMemo(
+  //   () => `Use ${ADMIN_USERNAME} / ${ADMIN_PASSWORD} or set VITE_ADMIN_USERNAME and VITE_ADMIN_PASSWORD.`,
+  //   []
+  // );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
