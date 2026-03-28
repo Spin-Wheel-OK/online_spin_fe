@@ -44,7 +44,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
     const colorA = '#0E3A5E'; // deep ocean blue
     const colorB = '#B8E8F0'; // light water splash
 
-    // During spin: use server-provided wheel segments (max 30, includes winner)
+    // During spin: use the server-provided wheel segments as-is.
     if (wheelSegments && wheelSegments.length > 0) {
       return wheelSegments.map((s, i) => ({
         number: i + 1,
@@ -53,26 +53,13 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       }));
     }
 
-    // Default: show up to 30 participants on the wheel
-    const MAX_WHEEL = 30;
+    // Default: show all participants on the wheel.
     const count = participants.length || 8;
-    if (count <= MAX_WHEEL) {
-      return Array.from({ length: count }, (_, i) => ({
-        number: i + 1,
-        label: participantIds[i] || String(i + 1),
-        color: i % 2 === 0 ? colorA : colorB,
-      }));
-    }
-    // Pick evenly spaced subset for display
-    const step = count / MAX_WHEEL;
-    return Array.from({ length: MAX_WHEEL }, (_, i) => {
-      const idx = Math.floor(i * step);
-      return {
-        number: i + 1,
-        label: participantIds[idx] || String(idx + 1),
-        color: i % 2 === 0 ? colorA : colorB,
-      };
-    });
+    return Array.from({ length: count }, (_, i) => ({
+      number: i + 1,
+      label: participantIds[i] || String(i + 1),
+      color: i % 2 === 0 ? colorA : colorB,
+    }));
   }, [participants, participantIds, wheelSegments]);
 
   const segmentAngle = 360 / segments.length;
