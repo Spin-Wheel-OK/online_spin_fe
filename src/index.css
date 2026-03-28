@@ -1,36 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=Orbitron:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=Orbitron:wght@500;700&family=Prompt:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* Custom CSS Variables */
+/* ─── Songkran Water Festival Theme ─── */
 :root {
-  --gold: #D4AF37;
-  --gold-light: #E8C547;
-  --dark-brown: #2B1B17;
-  --black: #0F0F0F;
-  --cream: #F5E6C8;
+  --water-dark: #0C1B2A;
+  --water-deep: #0E2A42;
+  --water-mid: #1565A0;
+  --water-bright: #22D3EE;
+  --water-light: #67E8F9;
+  --water-splash: #A5F3FC;
+  --gold: #FACC15;
+  --gold-light: #FDE68A;
+  --flower-pink: #F472B6;
+  --flower-magenta: #E879F9;
+  --cream: #F0FDFA;
   --white: #FFFFFF;
 }
 
 /* Base Styles */
 body {
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, #0F0F0F 0%, #1a0f0a 50%, #2B1B17 100%);
+  font-family: 'Prompt', 'Inter', sans-serif;
+  background: #0C1B2A;
   min-height: 100vh;
   color: #FFFFFF;
   overflow-x: hidden;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar — water theme */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a0f0a;
+  background: #0E2A42;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D4AF37;
+  background: #22D3EE;
   border-radius: 3px;
 }
 
@@ -43,27 +49,31 @@ body {
   font-family: 'Orbitron', sans-serif;
 }
 
-/* Gold Text Gradient */
+.font-prompt {
+  font-family: 'Prompt', sans-serif;
+}
+
+/* Songkran Title Gradient — water shimmer */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #D4AF37 0%, #F5E6C8 50%, #D4AF37 100%);
+  background: linear-gradient(135deg, #22D3EE 0%, #67E8F9 30%, #FACC15 60%, #22D3EE 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Gold Border Glow */
+/* Water Border Glow */
 .border-gold-glow {
-  border: 2px solid #D4AF37;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3), inset 0 0 15px rgba(212, 175, 55, 0.1);
+  border: 2px solid #22D3EE;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3), inset 0 0 15px rgba(34, 211, 238, 0.1);
 }
 
-/* Button Glow Animation */
+/* Button Glow Animation — water pulse */
 @keyframes buttonGlow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.5), 0 0 40px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.5), 0 0 40px rgba(34, 211, 238, 0.3);
   }
   50% {
-    box-shadow: 0 0 30px rgba(212, 175, 55, 0.7), 0 0 60px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 0 30px rgba(34, 211, 238, 0.7), 0 0 60px rgba(34, 211, 238, 0.5);
   }
 }
 
@@ -113,7 +123,7 @@ body {
   animation: modalScaleIn 0.3s ease-out forwards;
 }
 
-/* Gold Shimmer Effect */
+/* Water Shimmer Effect */
 @keyframes goldShimmer {
   0% {
     background-position: -200% center;
@@ -124,7 +134,7 @@ body {
 }
 
 .gold-shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.3) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(34, 211, 238, 0.3) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: goldShimmer 3s linear infinite;
 }
@@ -159,16 +169,45 @@ body {
   animation: pulse 2s ease-in-out infinite;
 }
 
-/* List Item Highlight */
+/* List Item Highlight — water glow */
 @keyframes highlightPulse {
   0%, 100% {
-    background-color: rgba(212, 175, 55, 0.2);
+    background-color: rgba(34, 211, 238, 0.15);
   }
   50% {
-    background-color: rgba(212, 175, 55, 0.4);
+    background-color: rgba(34, 211, 238, 0.35);
   }
 }
 
 .highlight-animate {
   animation: highlightPulse 1s ease-in-out infinite;
+}
+
+/* ─── Water Ripple Animation ─── */
+@keyframes waterRipple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* ─── Float Animation (for flowers) ─── */
+@keyframes floatSway {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(5deg);
+  }
+  75% {
+    transform: translateY(4px) rotate(-3deg);
+  }
+}
+
+.float-sway {
+  animation: floatSway 4s ease-in-out infinite;
 }

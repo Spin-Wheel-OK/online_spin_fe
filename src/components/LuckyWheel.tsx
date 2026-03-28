@@ -1,8 +1,9 @@
 import { useRef, useEffect, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
-import okvipLogo from '../assets/OKVIP-LOGO.png';
+const okvipLogo = '/OKVIP-LOGO.png';
 
 interface Segment {
   number: number;
+  label: string;
   color: string;
 }
 
@@ -13,6 +14,8 @@ interface SpinResult {
 
 interface LuckyWheelProps {
   participants: string[];
+  participantIds: string[];
+  wheelSegments?: { id: string; name: string }[] | null;
   onSpinEnd: (result?: SpinResult) => void;
   isSpinning: boolean;
   setIsSpinning: (spinning: boolean) => void;
@@ -28,7 +31,7 @@ interface Dimensions {
   height: number;
 }
 
-const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: number, participantCount: number) => void }, LuckyWheelProps>(({ participants, onSpinEnd, isSpinning, setIsSpinning }, ref) => {
+const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: number, participantCount: number) => void }, LuckyWheelProps>(({ participants, participantIds, wheelSegments, onSpinEnd, isSpinning, setIsSpinning }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rotation, setRotation] = useState(0);
   const [pointerAngle, setPointerAngle] = useState(0);
@@ -37,12 +40,40 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
   const pointerRef = useRef<PointerState>({ angle: 0, vel: 0 });
 
   const segments = useMemo((): Segment[] => {
+    // Songkran color pairs: deep ocean / light water
+    const colorA = '#0E3A5E'; // deep ocean blue
+    const colorB = '#B8E8F0'; // light water splash
+
+    // During spin: use server-provided wheel segments (max 30, includes winner)
+    if (wheelSegments && wheelSegments.length > 0) {
+      return wheelSegments.map((s, i) => ({
+        number: i + 1,
+        label: s.id,
+        color: i % 2 === 0 ? colorA : colorB,
+      }));
+    }
+
+    // Default: show up to 30 participants on the wheel
+    const MAX_WHEEL = 30;
     const count = participants.length || 8;
-    return Array.from({ length: count }, (_, i) => ({
-      number: i + 1,
-      color: i % 2 === 0 ? '#2B1B17' : '#F5E6C8',
-    }));
-  }, [participants]);
+    if (count <= MAX_WHEEL) {
+      return Array.from({ length: count }, (_, i) => ({
+        number: i + 1,
+        label: participantIds[i] || String(i + 1),
+        color: i % 2 === 0 ? colorA : colorB,
+      }));
+    }
+    // Pick evenly spaced subset for display
+    const step = count / MAX_WHEEL;
+    return Array.from({ length: MAX_WHEEL }, (_, i) => {
+      const idx = Math.floor(i * step);
+      return {
+        number: i + 1,
+        label: participantIds[idx] || String(idx + 1),
+        color: i % 2 === 0 ? colorA : colorB,
+      };
+    });
+  }, [participants, participantIds, wheelSegments]);
 
   const segmentAngle = 360 / segments.length;
 
@@ -185,15 +216,22 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
     },
 
     // Spin to a server-determined result angle (0-360)
-    spinToResult: (spinResult: number, _participantCount: number) => {
-      if (isSpinning) return;
+    // spinResult = the exact final rotation (mod 360) the wheel should stop at
+    // participantCount = the actual segment count on the wheel (avoids stale closure)
+    spinToResult: (spinResult: number, participantCount: number) => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+
+      // Use passed participantCount — NOT closure segmentAngle (which may be stale)
+      const animSegAngle = 360 / participantCount;
 
       setIsSpinning(true);
       const spinDuration = 20000 + Math.random() * 5000;
       const startRotation = rotation;
-      // Spin enough full rotations so the wheel lands on spinResult degrees
       const fullRotations = 360 * (15 + Math.floor(Math.random() * 5));
-      const totalRotation = fullRotations + spinResult;
+      const currentMod = ((startRotation % 360) + 360) % 360;
+      const targetMod = ((spinResult % 360) + 360) % 360;
+      const extraDeg = ((targetMod - currentMod) % 360 + 360) % 360;
+      const totalRotation = fullRotations + extraDeg;
       const startTime = Date.now();
 
       pointerRef.current = { angle: 0, vel: 0 };
@@ -228,7 +266,8 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
         const easeOut = 1 - Math.pow(1 - progress, 3);
         const currentRotation = startRotation + totalRotation * easeOut;
 
-        const sa = segmentAngle;
+        // Use animSegAngle (from param) — NOT stale closure segmentAngle
+        const sa = animSegAngle;
         const prevOff = ((prevRotation % sa) + sa) % sa;
         const curOff = ((currentRotation % sa) + sa) % sa;
         const tickCrossed = prevOff > sa * 0.7 && curOff < sa * 0.3;
@@ -261,21 +300,28 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const centerX = dimensions.width / 2;
     const centerY = dimensions.height / 2;
-    const radius = Math.min(centerX, centerY) - 20;
+    // Leave enough padding for tick bumps that sit outside the rim
+    const radius = Math.min(centerX, centerY) - 35;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const segmentAngleRad = (2 * Math.PI) / segments.length;
+    const count = segments.length;
+    const segAngleRad = (2 * Math.PI) / count;
 
+    // Font scales with segment arc length
+    const arcLength = segAngleRad * radius;
+    const fontSize = Math.max(Math.min(arcLength * 0.55, dimensions.width / 25), 3);
+    const borderWidth = count > 100 ? 0.5 : count > 50 ? 1 : 2;
+
+    // Draw ALL participant segments with p-id
     segments.forEach((segment, index) => {
-      const startAngle = index * segmentAngleRad + (rotation * Math.PI) / 180;
-      const endAngle = startAngle + segmentAngleRad;
+      const startAngle = index * segAngleRad + (rotation * Math.PI) / 180;
+      const endAngle = startAngle + segAngleRad;
 
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
@@ -283,52 +329,61 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       ctx.closePath();
       ctx.fillStyle = segment.color;
       ctx.fill();
-
-      ctx.strokeStyle = '#D4AF37';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#22D3EE';
+      ctx.lineWidth = borderWidth;
       ctx.stroke();
 
+      // Always show p-id label
       ctx.save();
       ctx.translate(centerX, centerY);
-      ctx.rotate(startAngle + segmentAngleRad / 2);
+      ctx.rotate(startAngle + segAngleRad / 2);
       ctx.textAlign = 'right';
-      ctx.fillStyle = segment.color === '#2B1B17' ? '#F5E6C8' : '#2B1B17';
-      const baseFontSize = dimensions.width / 25;
-      const fontSize = segments.length > 20 ? baseFontSize * 0.7 : segments.length > 12 ? baseFontSize * 0.85 : baseFontSize;
+      ctx.fillStyle = segment.color === '#0E3A5E' ? '#B8E8F0' : '#0E3A5E';
       ctx.font = `bold ${fontSize}px Orbitron, sans-serif`;
-      ctx.fillText(segment.number.toString(), radius - 15, 5);
+      ctx.fillText(segment.label, radius - 8, fontSize / 3);
       ctx.restore();
     });
 
-    // Outer gold rim
+    // Outer rim — Songkran cyan/gold gradient effect
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#D4AF37';
+    ctx.strokeStyle = '#22D3EE';
     ctx.lineWidth = 10;
     ctx.stroke();
+    // Second inner rim — gold accent
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius - 5, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    // Tick bumps — ปุ่มเล็กๆ ที่ขอบ ตรง segment boundary
-    const tickR = dimensions.width / 70;
-    segments.forEach((_, index) => {
-      const tickAngle = index * segmentAngleRad + (rotation * Math.PI) / 180;
-      const tx = centerX + Math.cos(tickAngle) * (radius + 2);
-      const ty = centerY + Math.sin(tickAngle) * (radius + 2);
-
+    // Tick bumps — water drop style on each segment boundary
+    const tickR = Math.max(Math.min(segAngleRad * radius * 0.15, dimensions.width / 70), 2);
+    for (let i = 0; i < count; i++) {
+      const tickAngle = i * segAngleRad + (rotation * Math.PI) / 180;
+      const tx = centerX + Math.cos(tickAngle) * (radius + tickR);
+      const ty = centerY + Math.sin(tickAngle) * (radius + tickR);
       ctx.beginPath();
       ctx.arc(tx, ty, tickR, 0, 2 * Math.PI);
-      ctx.fillStyle = '#C49B30';
+      ctx.fillStyle = '#67E8F9';
       ctx.fill();
-      ctx.strokeStyle = '#A07C20';
+      ctx.strokeStyle = '#0891B2';
       ctx.lineWidth = 1;
       ctx.stroke();
-    });
+    }
 
+    // Inner circle — water/gold center
     const innerRadius = dimensions.width / 12;
     ctx.beginPath();
     ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = '#D4AF37';
+    // Gradient fill for inner circle
+    const innerGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, innerRadius);
+    innerGrad.addColorStop(0, '#FACC15');
+    innerGrad.addColorStop(0.7, '#22D3EE');
+    innerGrad.addColorStop(1, '#0891B2');
+    ctx.fillStyle = innerGrad;
     ctx.fill();
-    ctx.strokeStyle = '#F5E6C8';
+    ctx.strokeStyle = '#67E8F9';
     ctx.lineWidth = 3;
     ctx.stroke();
   }, [rotation, segments, dimensions]);
@@ -344,7 +399,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
   return (
     <div className="relative" style={{ width: dimensions.width, height: dimensions.height }}>
       <div
-        className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-500/30 to-yellow-600/30 blur-2xl scale-110"
+        className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400/25 to-sky-500/25 blur-2xl scale-110"
         style={{ width: dimensions.width, height: dimensions.height }}
       />
 
@@ -356,7 +411,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       />
 
       <div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg border-2 border-yellow-300 overflow-hidden"
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-gradient-to-br from-cyan-400 to-sky-600 flex items-center justify-center shadow-lg border-2 border-cyan-300 overflow-hidden"
         style={{ width: dimensions.width / 6, height: dimensions.width / 6 }}
       >
         <img src={okvipLogo} alt="OKVIP Logo" className="w-full h-full object-contain p-1" />

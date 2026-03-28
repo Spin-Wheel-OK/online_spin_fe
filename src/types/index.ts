@@ -1,5 +1,12 @@
 // Types for Spin Wheel Frontend
 
+export interface ISession {
+  _id: string;
+  sessionNumber: number;
+  name: string;
+  createdAt?: string;
+}
+
 export interface IRound {
   roundNumber: number;
   prize: string;
@@ -35,6 +42,8 @@ export interface SpinResult {
   winner: IWinner;
   remainingParticipants: number;
   remainingSpins: number;
+  wheelSegments: { id: string; name: string }[];
+  winnerWheelIndex: number;
 }
 
 export interface AdminState {
@@ -51,18 +60,26 @@ export interface ClientToServerEvents {
   'spin-wheel': (data: SpinRequest) => void;
   'update-participants': (participants: IParticipant[]) => void;
   'update-rounds': (rounds: IRound[]) => void;
+  'select-round': (data: { roundNumber: number; prize: string; prizeAmount: number }) => void;
+  'select-session': (data: { sessionId: string | null }) => void;
+  'spin-ended': () => void;
+  'dismiss-winner': () => void;
 }
 
 export interface ServerToClientEvents {
-  'spin-start': (data: { roundNumber: number }) => void;
+  'spin-start': (data: { roundNumber: number; wheelSegments?: { id: string; name: string }[] }) => void;
   'spin-result': (data: SpinResult) => void;
   'state-update': (data: AdminState) => void;
+  'round-selected': (data: { roundNumber: number; prize: string; prizeAmount: number }) => void;
+  'spin-ended': () => void;
+  'dismiss-winner': () => void;
   'error': (message: string) => void;
 }
 
 // Winner display type
 export interface WinnerDisplay {
   number: number;
+  participantId: string;
   username: string;
   prize: string;
   reward: string;

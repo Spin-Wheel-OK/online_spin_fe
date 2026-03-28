@@ -1,14 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import axios from 'axios';
 
-const API_BASE = 'http://172.16.3.248:3000';
-const api = axios.create({ baseURL: API_BASE });
+const API_BASE = import.meta.env.VITE_API_BASE as string;
 import LuckyWheel from './components/LuckyWheel';
 import ParticipantList from './components/ParticipantList';
 import WinnerList from './components/WinnerList';
 import WinnerModal from './components/WinnerModal';
 import SparkleBackground from './components/SparkleBackground';
+import LanguageToggle from './components/LanguageToggle';
+import { useTranslation } from './i18n/LanguageContext';
 import { IParticipant, SpinResult, WinnerDisplay, ServerToClientEvents, ClientToServerEvents } from './types';
 
 // Socket.IO connection (viewer)
@@ -17,6 +17,7 @@ const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_BASE, 
 });
 
 function App() {
+  const { t } = useTranslation();
   const [isSpinning, setIsSpinning] = useState(false);
   const [participants, setParticipants] = useState<IParticipant[]>([]);
   const [selectedParticipant, setSelectedParticipant] = useState<IParticipant | null>(null);
@@ -24,39 +25,11 @@ function App() {
   const [showModal, setShowModal] = useState(false);
   const [currentWinner, setCurrentWinner] = useState<WinnerDisplay | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [currentRoundLabel, setCurrentRoundLabel] = useState<{ roundNumber: number; prize: string } | null>(null);
+  const [wheelSegments, setWheelSegments] = useState<{ id: string; name: string }[] | null>(null);
   const wheelRef = useRef<{ spin: () => void; spinToResult: (spinResult: number, participantCount: number) => void } | null>(null);
-  // Keep a ref to participants count for use inside socket callbacks
-  const participantCountRef = useRef(0);
-
-  useEffect(() => {
-    participantCountRef.current = participants.length;
-  }, [participants]);
-
-  // Load participants from API
-  const loadParticipants = async () => {
-    try {
-      const { data } = await api.get<IParticipant[]>('/api/participants');
-      setParticipants(data);
-    } catch (err) {
-      console.error('Failed to load participants:', err);
-    }
-  };
-
-  // Load winners from API
-  const loadWinners = async () => {
-    try {
-      const { data } = await api.get<{ roundNumber: number; participantName: string; prize: string; prizeAmount: number }[]>('/api/winners');
-      const mapped: WinnerDisplay[] = data.map((w) => ({
-        number: w.roundNumber,
-        username: w.participantName,
-        prize: w.prize,
-        reward: `${w.prizeAmount.toLocaleString()} THB`,
-      }));
-      setWinners(mapped);
-    } catch (err) {
-      console.error('Failed to load winners:', err);
-    }
-  };
+  const pendingWinnerRef = useRef<{ winnerData: WinnerDisplay; participantId: string } | null>(null);
+  const lastWinnerIdRef = useRef<string | null>(null);
 
   // Connect to Socket.IO
   useEffect(() => {
@@ -64,40 +37,70 @@ function App() {
 
     socket.on('connect', () => {
       setIsConnected(true);
-      console.log('Connected to server');
       socket.emit('join-viewer');
-      loadParticipants();
-      loadWinners();
     });
 
     socket.on('disconnect', () => {
       setIsConnected(false);
-      console.log('Disconnected from server');
+    });
+
+    socket.on('round-selected', (data) => {
+      setCurrentRoundLabel({ roundNumber: data.roundNumber, prize: data.prize });
     });
 
     socket.on('spin-start', (data) => {
       setIsSpinning(true);
-      console.log('Spin started for round:', data.roundNumber);
+      if (data.wheelSegments) {
+        setWheelSegments(data.wheelSegments);
+      }
     });
 
     socket.on('spin-result', (data: SpinResult) => {
       const winnerData: WinnerDisplay = {
         number: data.winner.roundNumber,
+        participantId: data.winner.participantId,
         username: data.winner.participantName,
         prize: data.winner.prize,
         reward: `${data.winner.prizeAmount.toLocaleString()} THB`,
       };
 
-      setWinners((prev) => [...prev, winnerData]);
-      setCurrentWinner(winnerData);
-      setParticipants((prev) => prev.filter((p) => p.id !== data.winner.participantId));
+      pendingWinnerRef.current = { winnerData, participantId: data.winner.participantId };
 
-      // Trigger wheel spin directly via ref (avoids stale-state race condition)
-      wheelRef.current?.spinToResult(data.winner.spinResult, participantCountRef.current);
+      const ws = data.wheelSegments;
+      const segCount = ws?.length ?? 8;
+      const segAngle = 360 / segCount;
+      const idx = data.winnerWheelIndex ?? 0;
+      const segCenter = idx * segAngle + segAngle / 2;
+      const randomOffset = (Math.random() - 0.5) * segAngle * 0.6;
+      const clientSpinResult = ((270 - segCenter + randomOffset) % 360 + 360) % 360;
+
+      wheelRef.current?.spinToResult(clientSpinResult, segCount);
     });
 
     socket.on('state-update', (data) => {
-      setParticipants(data.participants);
+      setParticipants(data.participants ?? []);
+      const mapped: WinnerDisplay[] = (data.winners ?? []).map((w: { roundNumber: number; participantId: string; participantName: string; prize: string; prizeAmount: number }) => ({
+        number: w.roundNumber,
+        participantId: w.participantId,
+        username: w.participantName,
+        prize: w.prize,
+        reward: `${w.prizeAmount.toLocaleString()} THB`,
+      }));
+      setWinners(mapped);
+      if (!data.participants?.length && !data.winners?.length) {
+        setCurrentRoundLabel(null);
+      }
+    });
+
+    socket.on('dismiss-winner', () => {
+      setShowModal(false);
+      setCurrentWinner(null);
+      const winnerId = lastWinnerIdRef.current;
+      if (winnerId) {
+        setParticipants((prev) => prev.filter((p) => p.id !== winnerId));
+        lastWinnerIdRef.current = null;
+      }
+      setWheelSegments(null);
     });
 
     socket.on('error', (message) => {
@@ -106,47 +109,73 @@ function App() {
     });
 
     return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('round-selected');
+      socket.off('spin-start');
+      socket.off('spin-result');
+      socket.off('state-update');
+      socket.off('dismiss-winner');
+      socket.off('error');
       socket.disconnect();
     };
   }, []);
 
   const handleSpinEnd = useCallback(() => {
     setIsSpinning(false);
-    setShowModal(true);
+    const pending = pendingWinnerRef.current;
+    if (pending) {
+      setCurrentWinner(pending.winnerData);
+      setShowModal(true);
+      lastWinnerIdRef.current = pending.participantId;
+      // Immediately add winner to local list (dedup by participantId+number)
+      setWinners(prev => {
+        const exists = prev.some(w => w.participantId === pending.winnerData.participantId && w.number === pending.winnerData.number);
+        return exists ? prev : [...prev, pending.winnerData];
+      });
+      pendingWinnerRef.current = null;
+    }
+    socket.emit('spin-ended');
   }, []);
 
-  const closeModal = () => {
-    setShowModal(false);
-    setCurrentWinner(null);
-  };
+  // Build round label with translation
+  const headerTitle = currentRoundLabel
+    ? t('roundLabel', { n: currentRoundLabel.roundNumber, prize: currentRoundLabel.prize })
+    : t('defaultTitle');
 
   return (
     <div className="min-h-screen h-screen relative overflow-hidden flex flex-col">
-      {/* Sparkle Background */}
       <SparkleBackground />
 
-      {/* Connection Status */}
-      <div className="fixed top-2 right-2 z-50">
-        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          isConnected ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+      {/* Top-right controls: Language + Connection */}
+      <div className="fixed top-2 right-2 z-50 flex items-center gap-2">
+        <LanguageToggle />
+        <div className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm ${
+          isConnected
+            ? 'bg-emerald-500/80 text-white border border-emerald-400/40'
+            : 'bg-red-500/80 text-white border border-red-400/40'
         }`}>
-          {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+          {isConnected ? `🟢 ${t('connected')}` : `🔴 ${t('disconnected')}`}
         </div>
       </div>
 
-      {/* Header */}
+      {/* Header — Songkran Water Festival */}
       <header className="relative z-10 py-4 px-4 flex-shrink-0">
-        <div className="flex justify-center items-center">
-          <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 drop-shadow-lg">
-            🎰 Lucky Wheel Reward 🎰
-          </h1>
+        <div className="flex flex-col justify-center items-center gap-1">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl float-sway" style={{ animationDelay: '0s' }}>💦</span>
+            <h1 className="font-prompt text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-cyan-300 drop-shadow-lg"
+                style={{ textShadow: '0 0 30px rgba(34,211,238,0.3)' }}>
+              {headerTitle}
+            </h1>
+            <span className="text-3xl float-sway" style={{ animationDelay: '1s' }}>🌺</span>
+          </div>
+          <p className="text-cyan-300/50 text-xs font-prompt tracking-widest">S O N G K R A N  ·  F E S T I V A L</p>
         </div>
       </header>
 
-      {/* Main Content - Full Screen */}
+      {/* Main Content */}
       <main className="relative z-10 flex-1 flex flex-col lg:flex-row gap-4 px-4 pb-4 min-h-0">
-
-        {/* Left Panel - Participant List */}
         <div className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
           <div className="h-48 lg:h-full">
             <ParticipantList
@@ -157,25 +186,23 @@ function App() {
           </div>
         </div>
 
-        {/* Center - Wheel Section */}
         <div className="flex-1 flex flex-col items-center justify-center order-1 lg:order-2 min-h-0">
           <div className="relative flex-1 flex items-center justify-center">
             <LuckyWheel
               ref={wheelRef}
               participants={participants.map(p => p.name)}
+              participantIds={participants.map(p => p.id ?? '')}
+              wheelSegments={wheelSegments}
               onSpinEnd={handleSpinEnd}
               isSpinning={isSpinning}
               setIsSpinning={setIsSpinning}
             />
           </div>
-
-          {/* Viewer label */}
-          <div className="mt-4 py-2 px-8 rounded-xl font-cinzel text-base font-semibold text-yellow-400/70 flex-shrink-0">
-            {isSpinning ? '🎰 Spinning...' : participants.length === 0 ? 'Waiting for participants...' : 'Waiting for Admin to spin...'}
+          <div className="mt-4 py-2 px-8 rounded-xl font-prompt text-base font-semibold text-cyan-300/70 flex-shrink-0">
+            {isSpinning ? `💦 ${t('spinning')}` : participants.length === 0 ? t('waitingParticipants') : `🪷 ${t('waitingAdmin')}`}
           </div>
         </div>
 
-        {/* Right Panel - Winner List */}
         <div className="lg:w-64 flex-shrink-0 order-3">
           <div className="h-48 lg:h-full">
             <WinnerList winners={winners} />
@@ -183,11 +210,10 @@ function App() {
         </div>
       </main>
 
-      {/* Winner Modal */}
       <WinnerModal
         isOpen={showModal}
         winner={currentWinner}
-        onClose={closeModal}
+        onClose={() => {}}
       />
     </div>
   );

@@ -1,53 +1,52 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { WinnerDisplay } from '../types';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface WinnerListProps {
   winners: WinnerDisplay[];
 }
 
 const WinnerList = ({ winners }: WinnerListProps) => {
+  const { t } = useTranslation();
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Reverse: newest first
+  const reversed = useMemo(() => [...winners].reverse(), [winners]);
+
+  // Scroll to top (newest) when list changes
   useEffect(() => {
-    // Scroll to bottom when new winner is added
     if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
+      listRef.current.scrollTop = 0;
     }
   }, [winners]);
 
   return (
     <div className="h-full flex flex-col">
-      <h2 className="font-cinzel text-xl font-semibold text-gold-gradient mb-4 text-center">
-        Winner List
+      <h2 className="font-prompt text-xl font-semibold text-gold-gradient mb-4 text-center">
+        🌺 {t('winnerList')}
       </h2>
-      <div 
+      <div
         ref={listRef}
-        className="flex-1 overflow-y-auto border-gold-glow rounded-lg bg-black/40 p-3 space-y-2"
+        className="flex-1 overflow-y-auto border-gold-glow rounded-lg bg-sky-950/50 p-3 space-y-2"
       >
-        {winners.length === 0 ? (
-          <div className="text-center text-gray-400 py-8">
-            <p className="text-sm">No winners yet</p>
-            <p className="text-xs mt-1">Spin the wheel to pick a winner!</p>
+        {reversed.length === 0 ? (
+          <div className="text-center text-cyan-300/40 py-8">
+            <p className="text-sm">{t('noWinnersYet')}</p>
+            <p className="text-xs mt-1">{t('spinToPickWinner')}</p>
           </div>
         ) : (
-          winners.map((winner, index) => (
+          reversed.map((winner, index) => (
             <div
-              key={index}
-              className={`px-3 py-2 rounded bg-black/30 border border-yellow-500/30 ${
-                index === winners.length - 1 ? 'highlight-animate' : ''
+              key={`${winner.participantId}-${winner.number}-${index}`}
+              className={`px-3 py-2 rounded bg-sky-900/40 border border-cyan-500/25 ${
+                index === 0 ? 'highlight-animate' : ''
               }`}
             >
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="font-orbitron text-yellow-400 text-sm font-bold">#{winner.number}</span>
-                  <span className="text-white text-sm font-medium">{winner.username}</span>
-                </div>
-                <span className="text-yellow-400 font-orbitron text-sm font-bold">{winner.prize}</span>
-              </div>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-gray-400 text-xs">Round #{winner.number}</span>
-                <span className="text-green-400 text-xs">{winner.reward}</span>
-              </div>
+              <p className="text-white text-sm font-medium">
+                <span className="font-orbitron text-cyan-300 font-bold">#{winner.participantId}</span>
+                {' '}{t('winner')}: {winner.username}
+              </p>
+              <p className="text-cyan-400/50 text-xs mt-0.5">{t('round')} {winner.number}</p>
             </div>
           ))
         )}
