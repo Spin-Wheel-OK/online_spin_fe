@@ -10,6 +10,7 @@ import SparkleBackground from './components/SparkleBackground';
 import LanguageToggle from './components/LanguageToggle';
 import { useTranslation } from './i18n/LanguageContext';
 import { IParticipant, SpinResult, WinnerDisplay, ServerToClientEvents, ClientToServerEvents } from './types';
+import { playCrowd, stopCrowd } from './audio';
 
 // Socket.IO connection (viewer)
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_BASE, {
@@ -95,6 +96,7 @@ function App() {
     socket.on('dismiss-winner', () => {
       setShowModal(false);
       setCurrentWinner(null);
+      stopCrowd(); // หยุดเสียงเชียร์
       const winnerId = lastWinnerIdRef.current;
       if (winnerId) {
         setParticipants((prev) => prev.filter((p) => p.id !== winnerId));
@@ -127,6 +129,7 @@ function App() {
     if (pending) {
       setCurrentWinner(pending.winnerData);
       setShowModal(true);
+      playCrowd(); // เสียงเชียร์ตอนประกาศผู้โชคดี
       lastWinnerIdRef.current = pending.participantId;
       // Immediately add winner to local list (dedup by participantId+number)
       setWinners(prev => {
@@ -162,15 +165,15 @@ function App() {
       {/* Header — Songkran Water Festival */}
       <header className="relative z-10 py-4 px-4 flex-shrink-0">
         <div className="flex flex-col justify-center items-center gap-1">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 bg-sky-950/60 backdrop-blur-sm px-6 py-2 rounded-2xl border border-cyan-400/20">
             <span className="text-3xl float-sway" style={{ animationDelay: '0s' }}>💦</span>
-            <h1 className="font-prompt text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-cyan-300 drop-shadow-lg"
-                style={{ textShadow: '0 0 30px rgba(34,211,238,0.3)' }}>
+            <h1 className="font-prompt text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-cyan-300"
+                style={{ textShadow: '0 0 30px rgba(34,211,238,0.3)', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.7))' }}>
               {headerTitle}
             </h1>
             <span className="text-3xl float-sway" style={{ animationDelay: '1s' }}>🌺</span>
           </div>
-          <p className="text-cyan-300/50 text-xs font-prompt tracking-widest">S O N G K R A N  ·  F E S T I V A L</p>
+          <p className="text-cyan-100 text-sm font-prompt font-semibold text-center whitespace-nowrap" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(34,211,238,0.4)' }}>{t('blessingMessage')}</p>
         </div>
       </header>
 
@@ -198,7 +201,7 @@ function App() {
               setIsSpinning={setIsSpinning}
             />
           </div>
-          <div className="mt-4 py-2 px-8 rounded-xl font-prompt text-base font-semibold text-cyan-300/70 flex-shrink-0">
+          <div className="mt-4 py-2 px-8 rounded-xl font-prompt text-base font-semibold text-cyan-200/90 flex-shrink-0 bg-sky-950/60 backdrop-blur-sm border border-cyan-400/15 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
             {isSpinning ? `💦 ${t('spinning')}` : participants.length === 0 ? t('waitingParticipants') : `🪷 ${t('waitingAdmin')}`}
           </div>
         </div>

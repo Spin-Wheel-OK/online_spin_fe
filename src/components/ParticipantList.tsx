@@ -12,14 +12,14 @@ const ParticipantList = ({ participants, selectedParticipant, onSelectParticipan
 
   return (
     <div className="h-full flex flex-col">
-      <h2 className="font-prompt text-xl font-semibold text-gold-gradient mb-4 text-center">
-        💦 {t('participants')} ({participants.length})
+      <h2 className="font-prompt text-xl font-semibold text-gold-gradient mb-4 text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+        <span style={{ WebkitTextFillColor: 'initial' }}>💦</span> {t('participants')} ({participants.length})
       </h2>
-      <div className="flex-1 overflow-y-auto border-gold-glow rounded-lg bg-sky-950/50 p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto border-gold-glow rounded-lg bg-sky-950/30 backdrop-blur-md p-3 space-y-2">
         {participants.length === 0 ? (
-          <div className="text-center text-cyan-300/40 py-8">
-            <p className="text-sm">{t('noParticipantsYet')}</p>
-            <p className="text-xs mt-1">{t('waitingToJoin')}</p>
+          <div className="text-center text-cyan-200/70 py-8">
+            <p className="text-sm font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">{t('noParticipantsYet')}</p>
+            <p className="text-xs mt-1 text-cyan-300/60 drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">{t('waitingToJoin')}</p>
           </div>
         ) : (
           participants.map((participant, index) => (

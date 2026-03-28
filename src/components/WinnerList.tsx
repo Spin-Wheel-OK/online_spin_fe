@@ -22,17 +22,17 @@ const WinnerList = ({ winners }: WinnerListProps) => {
 
   return (
     <div className="h-full flex flex-col">
-      <h2 className="font-prompt text-xl font-semibold text-gold-gradient mb-4 text-center">
-        🌺 {t('winnerList')}
+      <h2 className="font-prompt text-xl font-semibold text-gold-gradient mb-4 text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+        <span style={{ WebkitTextFillColor: 'initial' }}>🌺</span> {t('winnerList')}
       </h2>
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto border-gold-glow rounded-lg bg-sky-950/50 p-3 space-y-2"
+        className="flex-1 overflow-y-auto border-gold-glow rounded-lg bg-sky-950/30 backdrop-blur-md p-3 space-y-2"
       >
         {reversed.length === 0 ? (
-          <div className="text-center text-cyan-300/40 py-8">
-            <p className="text-sm">{t('noWinnersYet')}</p>
-            <p className="text-xs mt-1">{t('spinToPickWinner')}</p>
+          <div className="text-center text-cyan-200/70 py-8">
+            <p className="text-sm font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">{t('noWinnersYet')}</p>
+            <p className="text-xs mt-1 text-cyan-300/60 drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">{t('spinToPickWinner')}</p>
           </div>
         ) : (
           reversed.map((winner, index) => (
@@ -46,7 +46,7 @@ const WinnerList = ({ winners }: WinnerListProps) => {
                 <span className="font-orbitron text-cyan-300 font-bold">#{winner.participantId}</span>
                 {' '}{t('winner')}: {winner.username}
               </p>
-              <p className="text-cyan-400/50 text-xs mt-0.5">{t('round')} {winner.number}</p>
+              <p className="text-yellow-300 text-xs mt-0.5 font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{t('roundLabel', { n: winner.number, prize: winner.prize })}</p>
             </div>
           ))
         )}

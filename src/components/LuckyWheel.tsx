@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
+import { playTick } from '../audio';
 const okvipLogo = '/OKVIP-LOGO.png';
 
 interface Segment {
@@ -140,6 +141,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
         // pointer physics — tick ชนจากซ้าย → pointer เงี่ยนไปทางขวา (ลบ)
         const pr = pointerRef.current;
         if (tickCrossed) {
+          playTick();
           pr.vel -= Math.min(vel * 600, 35);
         }
         pr.vel += -pr.angle * 0.22;
@@ -263,6 +265,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
         const vel = (totalRotation / spinDuration) * Math.exp(-5 * (progress / (progress < 0.75 ? 0.75 : 1)));
         const pr = pointerRef.current;
         if (tickCrossed) {
+          playTick();
           pr.vel -= Math.min(vel * 600, 35);
         }
         pr.vel += -pr.angle * 0.22;
@@ -394,14 +397,15 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
         ref={canvasRef}
         width={dimensions.width}
         height={dimensions.height}
-        className="relative z-10"
+        className="relative z-10 select-none"
+        onDragStart={e => e.preventDefault()}
       />
 
       <div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-gradient-to-br from-cyan-400 to-sky-600 flex items-center justify-center shadow-lg border-2 border-cyan-300 overflow-hidden"
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-gradient-to-br from-cyan-400 to-sky-600 flex items-center justify-center shadow-lg border-2 border-cyan-300 overflow-hidden select-none"
         style={{ width: dimensions.width / 6, height: dimensions.width / 6 }}
       >
-        <img src={okvipLogo} alt="OKVIP Logo" className="w-full h-full object-contain p-1" />
+        <img src={okvipLogo} alt="OKVIP Logo" className="w-full h-full object-contain p-1 pointer-events-none" draggable={false} />
       </div>
 
       {/* Pointer */}
@@ -412,7 +416,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
           left: '50%',
           width: `${dimensions.width / 25 * 2}px`,
           height: `${dimensions.width / 12}px`,
-          transform: `translateX(-50%) translateY(-${dimensions.width / 12 * 0.50}px) rotate(${pointerAngle}deg)`,
+          transform: `translateX(-50%) translateY(-${dimensions.width / 12 * 0.30}px) rotate(${pointerAngle}deg)`,
           transformOrigin: '50% 0%',
           transition: 'none',
         }}
