@@ -5,6 +5,7 @@ import { LanguageProvider } from './i18n/LanguageContext'
 import './index.css'
 import App from './App.tsx'
 import AdminPanel from './components/AdminPanel.tsx'
+import AdminAuth from './components/AdminAuth.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -12,7 +13,14 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />} />
-          <Route path="/admin-mm" element={<AdminPanel />} />
+          <Route
+            path="/admin-mm"
+            element={
+              <AdminAuth>
+                <AdminPanel />
+              </AdminAuth>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </LanguageProvider>

@@ -5,6 +5,7 @@ import { ISession, IRound, IParticipant, IWinner, WinnerDisplay, AdminState, Ser
 import WinnerModal from './WinnerModal';
 import LanguageToggle from './LanguageToggle';
 import { useTranslation } from '../i18n/LanguageContext';
+import { clearAdminAuth } from './AdminAuth';
 
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 const api = axios.create({ baseURL: API_BASE });
@@ -316,6 +317,11 @@ const AdminPanel = () => {
     finally { setIsLoading(false); }
   };
 
+  const handleLogout = () => {
+    clearAdminAuth();
+    window.location.reload();
+  };
+
   const selectedRound = rounds.find(r => r.roundNumber === currentRound);
 
   return (
@@ -399,6 +405,12 @@ const AdminPanel = () => {
         <div className="ml-auto flex items-center gap-3">
           <LanguageToggle />
           <a href="/" className="text-sm text-yellow-400 hover:underline">← {t('viewWheel')}</a>
+          <button
+            onClick={handleLogout}
+            className="px-3 py-2 rounded-lg text-sm bg-gray-800 hover:bg-gray-700 text-white transition-colors"
+          >
+            Logout
+          </button>
           <div className={`px-3 py-1 rounded-full text-xs font-semibold ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}>
             {isConnected ? `🟢 ${t('connected')}` : `🔴 ${t('disconnected')}`}
           </div>
