@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=Orbitron:wght@500;700&family=Prompt:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+Thai:wght@400;500;600;700&family=Orbitron:wght@500;700&display=swap');
 @import "tailwindcss";
 
 /* ─── Songkran Water Festival Theme ─── */
@@ -19,7 +19,7 @@
 
 /* Base Styles */
 body {
-  font-family: 'Prompt', 'Inter', sans-serif;
+  font-family: 'Noto Sans Thai', 'Inter', sans-serif;
   background: #0C1B2A;
   min-height: 100vh;
   color: #FFFFFF;
@@ -50,7 +50,7 @@ body {
 }
 
 .font-prompt {
-  font-family: 'Prompt', sans-serif;
+  font-family: 'Noto Sans Thai', sans-serif;
 }
 
 /* OKVIP Title — solid color for Thai text compatibility */
