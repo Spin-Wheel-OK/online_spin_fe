@@ -146,7 +146,7 @@ const WinnerModal = ({ isOpen, winner, onClose, showContinue = false }: WinnerMo
              style={{ boxShadow: '0 0 40px rgba(34,211,238,0.2), 0 0 80px rgba(34,211,238,0.1)' }}>
           <div className="text-6xl mb-4">💦🎉</div>
 
-          <h2 className="font-prompt text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-yellow-300 to-cyan-300 mb-2">
+          <h2 className="font-prompt text-3xl font-bold text-amber-400 leading-relaxed mb-2" style={{ textShadow: '0 0 20px rgba(247,148,29,0.5)' }}>
             {t('weHaveAWinner')}
           </h2>
 

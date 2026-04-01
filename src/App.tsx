@@ -165,15 +165,15 @@ function App() {
       {/* Header — Songkran Water Festival */}
       <header className="relative z-10 py-4 px-4 flex-shrink-0">
         <div className="flex flex-col justify-center items-center gap-1">
-          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-sm px-6 py-2 rounded-2xl border border-orange-400/30">
+          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-sm px-6 py-3 rounded-2xl border border-orange-400/30 overflow-visible">
             <span className="text-3xl float-sway" style={{ animationDelay: '0s' }}>💦</span>
-            <h1 className="font-prompt text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-amber-400 to-orange-300"
-                style={{ textShadow: '0 0 30px rgba(247,148,29,0.3)', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.7))' }}>
+            <h1 className="font-prompt text-4xl md:text-5xl font-bold text-amber-400 leading-relaxed overflow-visible"
+                style={{ textShadow: '0 0 30px rgba(247,148,29,0.5), 0 2px 6px rgba(0,0,0,0.8)' }}>
               {headerTitle}
             </h1>
             <span className="text-3xl float-sway" style={{ animationDelay: '1s' }}>🌺</span>
           </div>
-          <p className="text-white text-lg md:text-xl font-prompt font-bold text-center mt-2 px-6 py-2 bg-black/50 backdrop-blur-sm rounded-xl border border-orange-400/30" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.9), 0 0 15px rgba(247,148,29,0.4)' }}>{t('blessingMessage')}</p>
+          <p className="text-white text-lg md:text-xl font-prompt font-bold text-center leading-relaxed mt-2 px-6 py-3 bg-black/50 backdrop-blur-sm rounded-xl border border-orange-400/30 overflow-visible" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.9), 0 0 15px rgba(247,148,29,0.4)' }}>{t('blessingMessage')}</p>
         </div>
       </header>
 
