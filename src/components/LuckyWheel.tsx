@@ -42,8 +42,8 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
 
   const segments = useMemo((): Segment[] => {
     // Songkran color pairs: deep ocean / light water
-    const colorA = '#0E3A5E'; // deep ocean blue
-    const colorB = '#B8E8F0'; // light water splash
+    const colorA = '#1A1A2E'; // OKVIP dark navy
+    const colorB = '#F7941D'; // OKVIP orange
 
     // During spin: use the server-provided wheel segments as-is.
     if (wheelSegments && wheelSegments.length > 0) {
@@ -319,7 +319,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       ctx.closePath();
       ctx.fillStyle = segment.color;
       ctx.fill();
-      ctx.strokeStyle = '#22D3EE';
+      ctx.strokeStyle = '#D4780A';
       ctx.lineWidth = borderWidth;
       ctx.stroke();
 
@@ -328,26 +328,26 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       ctx.translate(centerX, centerY);
       ctx.rotate(startAngle + segAngleRad / 2);
       ctx.textAlign = 'right';
-      ctx.fillStyle = segment.color === '#0E3A5E' ? '#B8E8F0' : '#0E3A5E';
+      ctx.fillStyle = segment.color === '#1A1A2E' ? '#F7941D' : '#1A1A2E';
       ctx.font = `bold ${fontSize}px Orbitron, sans-serif`;
       ctx.fillText(segment.label, radius - 8, fontSize / 3);
       ctx.restore();
     });
 
-    // Outer rim — Songkran cyan/gold gradient effect
+    // Outer rim — OKVIP orange/gold gradient effect
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#22D3EE';
+    ctx.strokeStyle = '#F7941D';
     ctx.lineWidth = 10;
     ctx.stroke();
-    // Second inner rim — gold accent
+    // Second inner rim — dark accent
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius - 5, 0, 2 * Math.PI);
-    ctx.strokeStyle = 'rgba(250, 204, 21, 0.4)';
+    ctx.strokeStyle = 'rgba(26, 26, 46, 0.6)';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Tick bumps — water drop style on each segment boundary
+    // Tick bumps — on each segment boundary
     const tickR = Math.max(Math.min(segAngleRad * radius * 0.15, dimensions.width / 70), 2);
     for (let i = 0; i < count; i++) {
       const tickAngle = i * segAngleRad + (rotation * Math.PI) / 180;
@@ -355,25 +355,25 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       const ty = centerY + Math.sin(tickAngle) * (radius + tickR);
       ctx.beginPath();
       ctx.arc(tx, ty, tickR, 0, 2 * Math.PI);
-      ctx.fillStyle = '#67E8F9';
+      ctx.fillStyle = '#FFB347';
       ctx.fill();
-      ctx.strokeStyle = '#0891B2';
+      ctx.strokeStyle = '#D4780A';
       ctx.lineWidth = 1;
       ctx.stroke();
     }
 
-    // Inner circle — water/gold center
+    // Inner circle — OKVIP orange/dark center
     const innerRadius = dimensions.width / 12;
     ctx.beginPath();
     ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
     // Gradient fill for inner circle
     const innerGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, innerRadius);
-    innerGrad.addColorStop(0, '#FACC15');
-    innerGrad.addColorStop(0.7, '#22D3EE');
-    innerGrad.addColorStop(1, '#0891B2');
+    innerGrad.addColorStop(0, '#F7941D');
+    innerGrad.addColorStop(0.7, '#D4780A');
+    innerGrad.addColorStop(1, '#1A1A2E');
     ctx.fillStyle = innerGrad;
     ctx.fill();
-    ctx.strokeStyle = '#67E8F9';
+    ctx.strokeStyle = '#F7941D';
     ctx.lineWidth = 3;
     ctx.stroke();
   }, [rotation, segments, dimensions]);
@@ -389,7 +389,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
   return (
     <div className="relative" style={{ width: dimensions.width, height: dimensions.height }}>
       <div
-        className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400/25 to-sky-500/25 blur-2xl scale-110"
+        className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-400/25 to-amber-500/25 blur-2xl scale-110"
         style={{ width: dimensions.width, height: dimensions.height }}
       />
 
@@ -402,7 +402,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       />
 
       <div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-gradient-to-br from-cyan-400 to-sky-600 flex items-center justify-center shadow-lg border-2 border-cyan-300 overflow-hidden select-none"
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-gradient-to-br from-orange-400 to-amber-600 flex items-center justify-center shadow-lg border-2 border-orange-300 overflow-hidden select-none"
         style={{ width: dimensions.width / 6, height: dimensions.width / 6 }}
       >
         <img src={okvipLogo} alt="OKVIP Logo" className="w-full h-full object-contain p-1 pointer-events-none" draggable={false} />
@@ -430,8 +430,8 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
             height: 0,
             borderLeft: `${dimensions.width / 25}px solid transparent`,
             borderRight: `${dimensions.width / 25}px solid transparent`,
-            borderTop: `${dimensions.width / 12}px solid #FACC15`,
-            filter: 'drop-shadow(0 2px 8px rgba(250,204,21, 0.9))',
+            borderTop: `${dimensions.width / 12}px solid #DC2626`,
+            filter: 'drop-shadow(0 2px 8px rgba(220,38,38, 0.9))',
           }}
         />
       </div>
