@@ -235,7 +235,7 @@ function App() {
           />
           <div className="relative z-10 flex flex-col items-center justify-end h-full pb-12 px-8">
             <p
-              className="text-white text-xl md:text-2xl font-prompt font-bold text-center leading-relaxed max-w-3xl px-8 py-5 bg-black/60 backdrop-blur-sm rounded-2xl border border-amber-400/30"
+              className="text-white text-3xl md:text-5xl font-prompt font-bold text-center leading-relaxed max-w-5xl px-12 py-8 bg-black/60 backdrop-blur-sm rounded-2xl border border-amber-400/30"
               style={{ textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}
             >
               OKVIP ขออวยพรให้พนักงานทุกท่านและครอบครัว มีความสุข สุขภาพแข็งแรง และประสบความสำเร็จทั้งในชีวิตและการทำงาน สุขสันต์วันสงกรานต์
