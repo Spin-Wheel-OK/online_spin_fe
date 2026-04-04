@@ -22,8 +22,8 @@ const WinnerList = ({ winners }: WinnerListProps) => {
 
   return (
     <div className="h-full flex flex-col">
-      <h2 className="font-prompt text-xl font-semibold text-gold-gradient mb-4 text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-        <span style={{ WebkitTextFillColor: 'initial' }}>🌺</span> {t('winnerList')}
+      <h2 className="font-prompt text-lg font-bold text-center mb-2 py-2 px-3 rounded-xl bg-amber-500/90 text-white border border-amber-400 shadow-lg shadow-amber-500/30">
+        🌺 {t('winnerList')}
       </h2>
       <div
         ref={listRef}

@@ -39,11 +39,12 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
   const animationRef = useRef<number | null>(null);
   const [dimensions, setDimensions] = useState<Dimensions>({ width: 500, height: 500 });
   const pointerRef = useRef<PointerState>({ angle: 0, vel: 0 });
+  const [hubPressed, setHubPressed] = useState(false);
 
   const segments = useMemo((): Segment[] => {
     // Songkran color pairs: deep ocean / light water
-    const colorA = '#1A1A2E'; // OKVIP dark navy
-    const colorB = '#F7941D'; // OKVIP orange
+    const colorA = '#1C1C1C'; // Dark/black
+    const colorB = '#F5F0E1'; // Cream/off-white
 
     // During spin: use the server-provided wheel segments as-is.
     if (wheelSegments && wheelSegments.length > 0) {
@@ -67,9 +68,9 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
 
   useEffect(() => {
     const updateDimensions = () => {
-      const maxWidth = window.innerWidth - 350;
-      const maxHeight = window.innerHeight - 200;
-      const size = Math.min(maxWidth, maxHeight, 800);
+      const maxWidth = window.innerWidth - 320;
+      const maxHeight = window.innerHeight - 120;
+      const size = Math.min(maxWidth, maxHeight, 900);
       setDimensions({ width: Math.max(size, 300), height: Math.max(size, 300) });
     };
     updateDimensions();
@@ -80,6 +81,10 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
   useImperativeHandle(ref, () => ({
     spin: () => {
       if (isSpinning) return;
+
+      // Hub press effect
+      setHubPressed(true);
+      setTimeout(() => setHubPressed(false), 200);
 
       setIsSpinning(true);
       const spinDuration = 20000 + Math.random() * 10000;
@@ -128,21 +133,20 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
 
         const currentRotation = startRotation + totalRotation * easeOut;
 
-        // ตรวจ tick crossing
+        // ตรวจ tick crossing — ใช้ floor index ให้แม่นยำ
         const sa = segmentAngle;
-        const prevOff = ((prevRotation % sa) + sa) % sa;
-        const curOff = ((currentRotation % sa) + sa) % sa;
-        const tickCrossed = prevOff > sa * 0.7 && curOff < sa * 0.3;
+        const prevTick = Math.floor(prevRotation / sa);
+        const curTick = Math.floor(currentRotation / sa);
+        const tickCrossed = curTick !== prevTick;
         prevRotation = currentRotation;
 
-        // velocity ปัจจุบัน (deg/ms โดยประมาณ)
         const vel = (totalRotation / spinDuration) * Math.exp(-5 * (progress / (progress < 0.75 ? 0.75 : 1)));
 
-        // pointer physics — tick ชนจากซ้าย → pointer เงี่ยนไปทางขวา (ลบ)
+        // pointer physics — wheel หมุนตามเข็ม → tick ชนจากขวา → pointer เงี่ยนไปทางขวา (บวก)
         const pr = pointerRef.current;
         if (tickCrossed) {
           playTick();
-          pr.vel -= Math.min(vel * 600, 35);
+          pr.vel += Math.min(vel * 600, 35);
         }
         pr.vel += -pr.angle * 0.22;
         pr.vel *= 0.70;
@@ -213,6 +217,10 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       // Use passed participantCount — NOT closure segmentAngle (which may be stale)
       const animSegAngle = 360 / participantCount;
 
+      // Hub press effect
+      setHubPressed(true);
+      setTimeout(() => setHubPressed(false), 200);
+
       setIsSpinning(true);
       const spinDuration = 20000 + Math.random() * 5000;
       const startRotation = rotation;
@@ -255,18 +263,18 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
         const easeOut = 1 - Math.pow(1 - progress, 3);
         const currentRotation = startRotation + totalRotation * easeOut;
 
-        // Use animSegAngle (from param) — NOT stale closure segmentAngle
+        // ตรวจ tick crossing — ใช้ floor index
         const sa = animSegAngle;
-        const prevOff = ((prevRotation % sa) + sa) % sa;
-        const curOff = ((currentRotation % sa) + sa) % sa;
-        const tickCrossed = prevOff > sa * 0.7 && curOff < sa * 0.3;
+        const prevTick = Math.floor(prevRotation / sa);
+        const curTick = Math.floor(currentRotation / sa);
+        const tickCrossed = curTick !== prevTick;
         prevRotation = currentRotation;
 
         const vel = (totalRotation / spinDuration) * Math.exp(-5 * (progress / (progress < 0.75 ? 0.75 : 1)));
         const pr = pointerRef.current;
         if (tickCrossed) {
           playTick();
-          pr.vel -= Math.min(vel * 600, 35);
+          pr.vel += Math.min(vel * 600, 35);
         }
         pr.vel += -pr.angle * 0.22;
         pr.vel *= 0.70;
@@ -287,96 +295,123 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
     },
   }));
 
+  // Layout
+  const hubR = dimensions.width / 9;
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const centerX = dimensions.width / 2;
-    const centerY = dimensions.height / 2;
-    // Leave enough padding for tick bumps that sit outside the rim
-    const radius = Math.min(centerX, centerY) - 35;
+    const W = dimensions.width;
+    const cx = W / 2;
+    const cy = W / 2;
+    const rimThick = W * 0.03;
+    const radius = cx - rimThick - 8;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, W, W);
 
-    const count = segments.length;
-    const segAngleRad = (2 * Math.PI) / count;
+    const N = segments.length;
+    const segRad = (2 * Math.PI) / N;
+    const arcLen = segRad * radius;
+    const fontSize = Math.max(Math.min(arcLen * 0.5, W / 28), 3);
 
-    // Font scales with segment arc length
-    const arcLength = segAngleRad * radius;
-    const fontSize = Math.max(Math.min(arcLength * 0.55, dimensions.width / 25), 3);
-    const borderWidth = count > 100 ? 0.5 : count > 50 ? 1 : 2;
-
-    // Draw ALL participant segments with p-id
-    segments.forEach((segment, index) => {
-      const startAngle = index * segAngleRad + (rotation * Math.PI) / 180;
-      const endAngle = startAngle + segAngleRad;
-
+    // 1) Segments
+    segments.forEach((seg, i) => {
+      const a0 = i * segRad + (rotation * Math.PI) / 180;
       ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, radius, a0, a0 + segRad);
       ctx.closePath();
-      ctx.fillStyle = segment.color;
+      ctx.fillStyle = seg.color;
       ctx.fill();
-      ctx.strokeStyle = '#D4780A';
-      ctx.lineWidth = borderWidth;
-      ctx.stroke();
 
-      // Always show p-id label
       ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(startAngle + segAngleRad / 2);
+      ctx.translate(cx, cy);
+      ctx.rotate(a0 + segRad / 2);
       ctx.textAlign = 'right';
-      ctx.fillStyle = segment.color === '#1A1A2E' ? '#F7941D' : '#1A1A2E';
+      ctx.fillStyle = seg.color === '#1C1C1C' ? 'rgba(210,185,130,0.55)' : 'rgba(50,50,50,0.4)';
       ctx.font = `bold ${fontSize}px Orbitron, sans-serif`;
-      ctx.fillText(segment.label, radius - 8, fontSize / 3);
+      ctx.fillText(seg.label, radius - 20, fontSize / 3);
       ctx.restore();
     });
 
-    // Outer rim — OKVIP orange/gold gradient effect
+    // 2) Gold rim — simple solid gold ring
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#F7941D';
-    ctx.lineWidth = 10;
+    ctx.arc(cx, cy, radius + rimThick / 2, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#B8860B';
+    ctx.lineWidth = rimThick;
     ctx.stroke();
-    // Second inner rim — dark accent
+    // Bright inner edge
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius - 5, 0, 2 * Math.PI);
-    ctx.strokeStyle = 'rgba(26, 26, 46, 0.6)';
+    ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#D4A017';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Dark outer edge
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius + rimThick, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#6B5310';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Tick bumps — on each segment boundary
-    const tickR = Math.max(Math.min(segAngleRad * radius * 0.15, dimensions.width / 70), 2);
-    for (let i = 0; i < count; i++) {
-      const tickAngle = i * segAngleRad + (rotation * Math.PI) / 180;
-      const tx = centerX + Math.cos(tickAngle) * (radius + tickR);
-      const ty = centerY + Math.sin(tickAngle) * (radius + tickR);
+    // 3) Tick pins
+    const pinR = Math.max(Math.min(segRad * radius * 0.06, 5), 2.5);
+    for (let i = 0; i < N; i++) {
+      const a = i * segRad + (rotation * Math.PI) / 180;
+      const pr = radius + rimThick / 2;
+      const px = cx + Math.cos(a) * pr;
+      const py = cy + Math.sin(a) * pr;
       ctx.beginPath();
-      ctx.arc(tx, ty, tickR, 0, 2 * Math.PI);
-      ctx.fillStyle = '#FFB347';
+      ctx.arc(px, py, pinR, 0, 2 * Math.PI);
+      ctx.fillStyle = '#F0E8D8';
       ctx.fill();
-      ctx.strokeStyle = '#D4780A';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#A09070';
+      ctx.lineWidth = 0.5;
       ctx.stroke();
     }
 
-    // Inner circle — OKVIP orange/dark center
-    const innerRadius = dimensions.width / 12;
+    // 4) Center hub — gold ring + dark circle
+    const hr = hubR;
+    const hubBorder = 5;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate((pointerAngle * Math.PI) / 180);
+
+    // Pointer triangle — sharp tip, flat bottom (no rounded corners)
+    const ptrH = hr * 0.6;
+    const ptrW = hr * 0.22;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
-    // Gradient fill for inner circle
-    const innerGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, innerRadius);
-    innerGrad.addColorStop(0, '#F7941D');
-    innerGrad.addColorStop(0.7, '#D4780A');
-    innerGrad.addColorStop(1, '#1A1A2E');
-    ctx.fillStyle = innerGrad;
+    ctx.moveTo(0, -hr - hubBorder - ptrH); // tip
+    ctx.lineTo(ptrW, -hr - hubBorder + 2);  // bottom-right
+    ctx.lineTo(-ptrW, -hr - hubBorder + 2); // bottom-left
+    ctx.closePath();
+    ctx.lineJoin = 'miter';
+    ctx.fillStyle = '#D4A017';
     ctx.fill();
-    ctx.strokeStyle = '#F7941D';
+
+    // Gold ring
+    ctx.beginPath();
+    ctx.arc(0, 0, hr + hubBorder, 0, 2 * Math.PI);
+    ctx.fillStyle = '#B8860B';
+    ctx.fill();
+    // Bright highlight (top-left)
+    ctx.beginPath();
+    ctx.arc(0, 0, hr + hubBorder, -Math.PI * 0.8, -Math.PI * 0.2);
+    ctx.strokeStyle = '#D4A017';
     ctx.lineWidth = 3;
     ctx.stroke();
-  }, [rotation, segments, dimensions]);
+
+    // Dark center
+    ctx.beginPath();
+    ctx.arc(0, 0, hr, 0, 2 * Math.PI);
+    ctx.fillStyle = '#1A1A1A';
+    ctx.fill();
+
+    ctx.restore();
+  }, [rotation, segments, dimensions, hubR, pointerAngle]);
 
   useEffect(() => {
     return () => {
@@ -388,11 +423,6 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
 
   return (
     <div className="relative" style={{ width: dimensions.width, height: dimensions.height }}>
-      <div
-        className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-400/25 to-amber-500/25 blur-2xl scale-110"
-        style={{ width: dimensions.width, height: dimensions.height }}
-      />
-
       <canvas
         ref={canvasRef}
         width={dimensions.width}
@@ -401,39 +431,18 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
         onDragStart={e => e.preventDefault()}
       />
 
+      {/* OKVIP logo — click/press animation on spin start */}
       <div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-gradient-to-br from-orange-400 to-amber-600 flex items-center justify-center shadow-lg border-2 border-orange-300 overflow-hidden select-none"
-        style={{ width: dimensions.width / 6, height: dimensions.width / 6 }}
-      >
-        <img src={okvipLogo} alt="OKVIP Logo" className="w-full h-full object-contain p-1 pointer-events-none" draggable={false} />
-      </div>
-
-      {/* Pointer */}
-      <div
-        className="absolute z-30"
+        className="absolute top-1/2 left-1/2 z-20 select-none rounded-full flex items-center justify-center"
         style={{
-          top: 0,
-          left: '50%',
-          width: `${dimensions.width / 25 * 2}px`,
-          height: `${dimensions.width / 12}px`,
-          transform: `translateX(-50%) translateY(-${dimensions.width / 12 * 0.30}px) rotate(${pointerAngle}deg)`,
-          transformOrigin: '50% 0%',
-          transition: 'none',
+          width: hubR * 1.8,
+          height: hubR * 1.8,
+          transform: `translate(-50%, -50%) scale(${hubPressed ? 0.85 : 1})`,
+          transition: hubPressed ? 'transform 0.1s ease-in' : 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          filter: hubPressed ? 'brightness(1.3)' : 'brightness(1)',
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: 0,
-            height: 0,
-            borderLeft: `${dimensions.width / 25}px solid transparent`,
-            borderRight: `${dimensions.width / 25}px solid transparent`,
-            borderTop: `${dimensions.width / 12}px solid #DC2626`,
-            filter: 'drop-shadow(0 2px 8px rgba(220,38,38, 0.9))',
-          }}
-        />
+        <img src={okvipLogo} alt="OKVIP Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
       </div>
     </div>
   );

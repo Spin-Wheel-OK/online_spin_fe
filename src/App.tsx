@@ -162,23 +162,23 @@ function App() {
         </div>
       </div>
 
-      {/* Header — Songkran Water Festival */}
-      <header className="relative z-10 py-4 px-4 flex-shrink-0">
-        <div className="flex flex-col justify-center items-center gap-1">
-          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-sm px-6 py-3 rounded-2xl border border-orange-400/30 overflow-visible">
-            <span className="text-3xl float-sway" style={{ animationDelay: '0s' }}>💦</span>
-            <h1 className="font-prompt text-4xl md:text-5xl font-bold text-amber-400 leading-relaxed overflow-visible"
-                style={{ textShadow: '0 0 30px rgba(247,148,29,0.5), 0 2px 6px rgba(0,0,0,0.8)' }}>
+      {/* Header — compact */}
+      <header className="relative z-10 py-1 px-4 flex-shrink-0">
+        <div className="flex flex-col justify-center items-center">
+          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm px-4 py-1.5 rounded-xl border border-orange-400/30">
+            <span className="text-lg float-sway" style={{ animationDelay: '0s' }}>💦</span>
+            <h1 className="font-prompt text-xl md:text-2xl font-bold text-amber-400 leading-tight"
+                style={{ textShadow: '0 0 20px rgba(247,148,29,0.5), 0 1px 4px rgba(0,0,0,0.8)' }}>
               {headerTitle}
             </h1>
-            <span className="text-3xl float-sway" style={{ animationDelay: '1s' }}>🌺</span>
+            <span className="text-lg float-sway" style={{ animationDelay: '1s' }}>🌺</span>
           </div>
-          <p className="text-white text-lg md:text-xl font-prompt font-bold text-center leading-relaxed mt-2 px-6 py-3 bg-black/50 backdrop-blur-sm rounded-xl border border-orange-400/30 overflow-visible" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.9), 0 0 15px rgba(247,148,29,0.4)' }}>{t('blessingMessage')}</p>
+          <p className="text-white text-xs md:text-sm font-prompt font-bold text-center leading-tight mt-1 px-4 py-1 bg-black/50 backdrop-blur-sm rounded-lg border border-orange-400/30" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{t('blessingMessage')}</p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex flex-col lg:flex-row gap-4 px-4 pb-4 min-h-0">
+      <main className="relative z-10 flex-1 flex flex-col lg:flex-row gap-2 px-2 pb-2 min-h-0">
         <div className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
           <div className="h-48 lg:h-full">
             <ParticipantList
@@ -201,7 +201,7 @@ function App() {
               setIsSpinning={setIsSpinning}
             />
           </div>
-          <div className="mt-4 py-2 px-8 rounded-xl font-prompt text-base font-semibold text-orange-200/90 flex-shrink-0 bg-black/60 backdrop-blur-sm border border-orange-400/15 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+          <div className="mt-1 py-1 px-4 rounded-lg font-prompt text-xs font-semibold text-orange-200/90 flex-shrink-0 bg-black/60 backdrop-blur-sm border border-orange-400/15">
             {isSpinning ? `💦 ${t('spinning')}` : participants.length === 0 ? t('waitingParticipants') : `🪷 ${t('waitingAdmin')}`}
           </div>
         </div>

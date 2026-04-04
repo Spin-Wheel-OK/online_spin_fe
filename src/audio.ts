@@ -1,6 +1,6 @@
 // ─── Shared audio utilities ───
 
-const SOUND_URL = '/sound.mp3';
+const SOUND_URL = '/audio.mp3';
 const CROWD_URL = '/community-crowd.mp3';
 
 let tickBlobUrl: string | null = null;
