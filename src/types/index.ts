@@ -64,6 +64,7 @@ export interface ClientToServerEvents {
   'select-session': (data: { sessionId: string | null }) => void;
   'spin-ended': () => void;
   'dismiss-winner': () => void;
+  'welcome-mode': (data: { enabled: boolean }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -74,6 +75,7 @@ export interface ServerToClientEvents {
   'spin-ended': () => void;
   'dismiss-winner': () => void;
   'error': (message: string) => void;
+  'welcome-mode': (data: { enabled: boolean }) => void;
 }
 
 // Winner display type

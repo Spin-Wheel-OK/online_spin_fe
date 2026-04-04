@@ -31,6 +31,7 @@ function App() {
   const wheelRef = useRef<{ spin: () => void; spinToResult: (spinResult: number, participantCount: number) => void } | null>(null);
   const pendingWinnerRef = useRef<{ winnerData: WinnerDisplay; participantId: string } | null>(null);
   const lastWinnerIdRef = useRef<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // Connect to Socket.IO
   useEffect(() => {
@@ -110,6 +111,10 @@ function App() {
       setIsSpinning(false);
     });
 
+    socket.on('welcome-mode', (data) => {
+      setShowWelcome(data.enabled);
+    });
+
     return () => {
       socket.off('connect');
       socket.off('disconnect');
@@ -119,6 +124,7 @@ function App() {
       socket.off('state-update');
       socket.off('dismiss-winner');
       socket.off('error');
+      socket.off('welcome-mode');
       socket.disconnect();
     };
   }, []);
@@ -218,6 +224,25 @@ function App() {
         winner={currentWinner}
         onClose={() => {}}
       />
+
+      {/* Welcome Mode — fullscreen overlay */}
+      {showWelcome && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black">
+          <img
+            src="/0000.webp"
+            alt="Welcome"
+            className="w-full h-full object-cover absolute inset-0"
+          />
+          <div className="relative z-10 flex flex-col items-center justify-end h-full pb-12 px-8">
+            <p
+              className="text-white text-xl md:text-2xl font-prompt font-bold text-center leading-relaxed max-w-3xl px-8 py-5 bg-black/60 backdrop-blur-sm rounded-2xl border border-amber-400/30"
+              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}
+            >
+              OKVIP ขออวยพรให้พนักงานทุกท่านและครอบครัว มีความสุข สุขภาพแข็งแรง และประสบความสำเร็จทั้งในชีวิตและการทำงาน สุขสันต์วันสงกรานต์
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

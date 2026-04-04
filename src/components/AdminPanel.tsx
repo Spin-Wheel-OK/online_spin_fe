@@ -38,6 +38,7 @@ const AdminPanel = () => {
   const lastWinnerIdRef = useRef<string | null>(null);
 
   // Round CRUD state
+  const [welcomeMode, setWelcomeMode] = useState(false);
   const [showRoundForm, setShowRoundForm] = useState(false);
   const [editingRound, setEditingRound] = useState<IRound | null>(null);
   const [roundForm, setRoundForm] = useState({ roundNumber: 0, prize: '', prizeAmount: 0, totalSpins: 1 });
@@ -401,6 +402,22 @@ const AdminPanel = () => {
           disabled={isLoading || !activeSession}
           className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-900/60 hover:bg-red-800/60 border border-red-500/50 text-red-300 transition-colors disabled:opacity-40 whitespace-nowrap"
         >{t('reset')}</button>
+
+        {/* Welcome Mode Toggle */}
+        <button
+          onClick={() => {
+            const next = !welcomeMode;
+            setWelcomeMode(next);
+            socket.emit('welcome-mode', { enabled: next });
+          }}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+            welcomeMode
+              ? 'bg-amber-500 text-black hover:bg-amber-400'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          {welcomeMode ? '🌺 Welcome ON' : '🌺 Welcome OFF'}
+        </button>
 
         <div className="ml-auto flex items-center gap-3">
           <LanguageToggle />
