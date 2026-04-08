@@ -228,19 +228,24 @@ function App() {
       {/* Welcome Mode — fullscreen overlay */}
       {showWelcome && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black">
-          <img
-            src="/0000.webp"
-            alt="Welcome"
-            className="w-full h-full object-cover absolute inset-0"
+          {/* PC video (16:9) */}
+          <video
+            src="https://ui-task-files.781243555.com/r2-uploader/2026-04-08/1775629949924_01cveq_OKVIP_16_9.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="hidden md:block w-full h-full object-cover absolute inset-0"
           />
-          <div className="relative z-10 flex flex-col items-center justify-end h-full pb-4 px-4">
-            <p
-              className="text-white text-3xl md:text-4xl lg:text-5xl font-prompt font-bold text-center leading-tight w-full max-w-[90vw] px-10 py-5 bg-black/50 backdrop-blur-sm rounded-2xl border border-amber-400/30"
-              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}
-            >
-              OKVIP ขออวยพรให้พนักงานทุกท่านและครอบครัว มีความสุข สุขภาพแข็งแรง และประสบความสำเร็จทั้งในชีวิตและการทำงาน สุขสันต์วันสงกรานต์
-            </p>
-          </div>
+          {/* Mobile video (9:16) */}
+          <video
+            src="https://ui-task-files.781243555.com/r2-uploader/2026-04-08/1775630255315_qmwr69_OKVIP_9_16.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="block md:hidden w-full h-full object-cover absolute inset-0"
+          />
         </div>
       )}
     </div>
