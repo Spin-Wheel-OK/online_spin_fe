@@ -85,4 +85,5 @@ export interface WinnerDisplay {
   username: string;
   prize: string;
   reward: string;
+  timestamp?: string;
 }

@@ -105,13 +105,18 @@ function App() {
 
     socket.on('state-update', (data) => {
       setParticipants(data.participants ?? []);
-      const mapped: WinnerDisplay[] = (data.winners ?? []).map((w: { roundNumber: number; participantId: string; participantName: string; prize: string; prizeAmount: number }) => ({
-        number: w.roundNumber,
-        participantId: w.participantId,
-        username: w.participantName,
-        prize: w.prize,
-        reward: `${w.prizeAmount.toLocaleString()} THB`,
-      }));
+      const mapped: WinnerDisplay[] = (data.winners ?? []).map((w) => {
+        const ts = (w as { timestamp?: string | Date; createdAt?: string | Date }).timestamp
+          ?? (w as { createdAt?: string | Date }).createdAt;
+        return {
+          number: w.roundNumber,
+          participantId: w.participantId,
+          username: w.participantName,
+          prize: w.prize,
+          reward: `${w.prizeAmount.toLocaleString()} THB`,
+          timestamp: ts ? new Date(ts).toISOString() : undefined,
+        };
+      });
       setWinners(mapped);
       if (!data.participants?.length && !data.winners?.length) {
         setCurrentRoundLabel(null);

@@ -106,6 +106,7 @@ const translations = {
 
   // Winners Log (admin)
   winnersLog: { th: 'รายชื่อผู้โชคดี', en: 'Winners Log', zh: '获奖记录' },
+  exportexcel: { th: 'ส่งออกเป็น Excel', en: 'Export to Excel', zh: '导出为 Excel' },
   noWinnersYetAdmin: { th: 'ยังไม่มีผู้โชคดี', en: 'No winners yet.', zh: '暂无获奖者。' },
   time: { th: 'เวลา', en: 'Time', zh: '时间' },
   actions: { th: 'จัดการ', en: 'Actions', zh: '操作' },

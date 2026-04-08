@@ -598,7 +598,37 @@ const AdminPanel = () => {
 
           {/* Winners Log */}
           <div className="lg:col-span-2 bg-gray-900 rounded-xl p-5 border border-yellow-500/30">
-            <h2 className="font-cinzel text-xl font-semibold text-yellow-400 mb-3">🏆 {t('winnersLog')}</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-cinzel text-xl font-semibold text-yellow-400">🏆 {t('winnersLog')}</h2>
+              <button
+                onClick={() => {
+                  if (winners.length === 0) return;
+                  const headers = ['รางวัลที่', 'participantId-ชื่อ', 'เงินรางวัล', 'เวลา'];
+                  const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+                  const rows = winners.map((w) => [
+                    esc(String(w.roundNumber)),
+                    esc(`${w.participantId}-${w.participantName}`),
+                    esc(`${w.prizeAmount.toLocaleString()} THB`),
+                    esc(w.timestamp ? new Date(w.timestamp).toLocaleString('th-TH') : ''),
+                  ].join(','));
+                  const csv = '\uFEFF' + [headers.map(esc).join(','), ...rows].join('\r\n');
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `winners-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                disabled={winners.length === 0}
+                className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-xs font-semibold border border-emerald-400/60 shadow transition"
+                title="Export to Excel"
+              >
+                📊 {t('exportexcel')}
+              </button>
+            </div>
             {winners.length === 0 ? (
               <div className="text-gray-400 text-sm text-center py-4">{t('noWinnersYetAdmin')}</div>
             ) : (
