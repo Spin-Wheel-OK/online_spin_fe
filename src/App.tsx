@@ -32,6 +32,30 @@ function App() {
   const pendingWinnerRef = useRef<{ winnerData: WinnerDisplay; participantId: string } | null>(null);
   const lastWinnerIdRef = useRef<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeMuted, setWelcomeMuted] = useState(true);
+  const welcomeVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)').matches : false
+  );
+
+  const toggleWelcomeMuted = () => {
+    setWelcomeMuted((prev) => {
+      const next = !prev;
+      const v = welcomeVideoRef.current;
+      if (v) {
+        v.muted = next;
+        v.play().catch(() => {});
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // Connect to Socket.IO
   useEffect(() => {
@@ -228,24 +252,27 @@ function App() {
       {/* Welcome Mode — fullscreen overlay */}
       {showWelcome && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black">
-          {/* PC video (16:9) */}
           <video
-            src="https://ui-task-files.781243555.com/r2-uploader/2026-04-08/1775629949924_01cveq_OKVIP_16_9.mp4"
+            key={isMobile ? 'mobile' : 'pc'}
+            ref={welcomeVideoRef}
+            src={
+              isMobile
+                ? 'https://ui-task-files.781243555.com/r2-uploader/2026-04-08/1775630255315_qmwr69_OKVIP_9_16.mp4'
+                : 'https://ui-task-files.781243555.com/r2-uploader/2026-04-08/1775629949924_01cveq_OKVIP_16_9.mp4'
+            }
             autoPlay
             loop
-            muted
+            muted={welcomeMuted}
             playsInline
-            className="hidden md:block w-full h-full object-cover absolute inset-0"
+            className="w-full h-full object-cover absolute inset-0"
           />
-          {/* Mobile video (9:16) */}
-          <video
-            src="https://ui-task-files.781243555.com/r2-uploader/2026-04-08/1775630255315_qmwr69_OKVIP_9_16.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="block md:hidden w-full h-full object-cover absolute inset-0"
-          />
+          <button
+            onClick={toggleWelcomeMuted}
+            className="absolute bottom-6 right-6 z-10 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm border border-white/30 text-white w-14 h-14 flex items-center justify-center text-2xl transition"
+            aria-label={welcomeMuted ? 'Unmute' : 'Mute'}
+          >
+            {welcomeMuted ? '🔇' : '🔊'}
+          </button>
         </div>
       )}
     </div>
