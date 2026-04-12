@@ -4,7 +4,7 @@ import { io, Socket } from 'socket.io-client';
 const API_BASE = import.meta.env.VITE_API_BASE as string;
 import LuckyWheel from './components/LuckyWheel';
 import ParticipantList from './components/ParticipantList';
-import WinnerList from './components/WinnerList';
+// import WinnerList from './components/WinnerList';
 import WinnerModal from './components/WinnerModal';
 import SparkleBackground from './components/SparkleBackground';
 import LanguageToggle from './components/LanguageToggle';
@@ -22,7 +22,7 @@ function App() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [participants, setParticipants] = useState<IParticipant[]>([]);
   const [selectedParticipant, setSelectedParticipant] = useState<IParticipant | null>(null);
-  const [winners, setWinners] = useState<WinnerDisplay[]>([]);
+  const [_winners, setWinners] = useState<WinnerDisplay[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [currentWinner, setCurrentWinner] = useState<WinnerDisplay | null>(null);
   const [isConnected, setIsConnected] = useState(false);
