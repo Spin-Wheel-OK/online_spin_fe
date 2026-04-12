@@ -31,6 +31,7 @@ function App() {
   const wheelRef = useRef<{ spin: () => void; spinToResult: (spinResult: number, participantCount: number) => void } | null>(null);
   const pendingWinnerRef = useRef<{ winnerData: WinnerDisplay; participantId: string } | null>(null);
   const lastWinnerIdRef = useRef<string | null>(null);
+  const pendingStateWinnersRef = useRef<WinnerDisplay[] | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeMuted, setWelcomeMuted] = useState(true);
   const welcomeVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -105,9 +106,8 @@ function App() {
 
     socket.on('state-update', (data) => {
       setParticipants(data.participants ?? []);
-      const mapped: WinnerDisplay[] = (data.winners ?? []).map((w) => {
-        const ts = (w as { timestamp?: string | Date; createdAt?: string | Date }).timestamp
-          ?? (w as { createdAt?: string | Date }).createdAt;
+      const mapped: WinnerDisplay[] = (data.winners ?? []).map((w: { roundNumber: number; participantId: string; participantName: string; prize: string; prizeAmount: number; timestamp?: string | Date; createdAt?: string | Date }) => {
+        const ts = w.timestamp ?? w.createdAt;
         return {
           number: w.roundNumber,
           participantId: w.participantId,
@@ -117,7 +117,12 @@ function App() {
           timestamp: ts ? new Date(ts).toISOString() : undefined,
         };
       });
-      setWinners(mapped);
+      // If wheel is spinning, defer winners update until spin ends
+      if (pendingWinnerRef.current) {
+        pendingStateWinnersRef.current = mapped;
+      } else {
+        setWinners(mapped);
+      }
       if (!data.participants?.length && !data.winners?.length) {
         setCurrentRoundLabel(null);
       }
@@ -164,13 +169,19 @@ function App() {
     if (pending) {
       setCurrentWinner(pending.winnerData);
       setShowModal(true);
-      playCrowd(); // เสียงเชียร์ตอนประกาศผู้โชคดี
+      playCrowd();
       lastWinnerIdRef.current = pending.participantId;
-      // Immediately add winner to local list (dedup by participantId+number)
-      setWinners(prev => {
-        const exists = prev.some(w => w.participantId === pending.winnerData.participantId && w.number === pending.winnerData.number);
-        return exists ? prev : [...prev, pending.winnerData];
-      });
+      // Apply deferred state-update winners if any, otherwise add locally
+      const deferred = pendingStateWinnersRef.current;
+      if (deferred) {
+        setWinners(deferred);
+        pendingStateWinnersRef.current = null;
+      } else {
+        setWinners(prev => {
+          const exists = prev.some(w => w.participantId === pending.winnerData.participantId && w.number === pending.winnerData.number);
+          return exists ? prev : [...prev, pending.winnerData];
+        });
+      }
       pendingWinnerRef.current = null;
     }
     socket.emit('spin-ended');
