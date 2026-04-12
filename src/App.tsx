@@ -252,11 +252,11 @@ function App() {
           </div>
         </div>
 
-        <div className="lg:w-64 flex-shrink-0 order-3">
+        {/* <div className="lg:w-64 flex-shrink-0 order-3">
           <div className="h-48 lg:h-full">
             <WinnerList winners={winners} />
           </div>
-        </div>
+        </div> */}
       </main>
 
       <WinnerModal
