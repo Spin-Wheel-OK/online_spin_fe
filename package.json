@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && node scripts/deploy.mjs"
   },
   "dependencies": {
     "@types/react-router-dom": "^5.3.3",
@@ -30,6 +31,7 @@
     "globals": "^17.4.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.8.2",
-    "vite": "^8.0.1"
+    "vite": "^8.0.1",
+    "wrangler": "^4.88.0"
   }
 }
