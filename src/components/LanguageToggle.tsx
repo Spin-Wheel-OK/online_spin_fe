@@ -6,6 +6,7 @@ const langOptions: { code: Lang; label: string; flag: string }[] = [
   { code: 'th', label: 'ไทย', flag: 'https://flagcdn.com/w40/th.png' },
   { code: 'en', label: 'English', flag: 'https://flagcdn.com/w40/gb.png' },
   { code: 'zh', label: '中文', flag: 'https://flagcdn.com/w40/cn.png' },
+  { code: 'id', label: 'Indonesia', flag: 'https://flagcdn.com/w40/id.png' },
 ];
 
 const LanguageToggle = ({ className = '' }: { className?: string }) => {

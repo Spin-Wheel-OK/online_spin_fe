@@ -14,7 +14,7 @@ const STORAGE_KEY = 'spin-wheel-lang';
 function getInitialLang(): Lang {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'th' || stored === 'en' || stored === 'zh') return stored;
+    if (stored === 'th' || stored === 'en' || stored === 'zh' || stored === 'id') return stored;
   } catch { /* ignore */ }
   return 'th'; // default
 }
