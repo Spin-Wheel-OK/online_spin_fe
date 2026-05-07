@@ -131,7 +131,7 @@ const AdminPanel = () => {
           participantId: pending.winner.participantId,
           username: pending.winner.participantName,
           prize: pending.winner.prize,
-          reward: `${pending.winner.prizeAmount.toLocaleString()} THB`,
+          reward: pending.winner.prizeAmount.toLocaleString(),
         });
         setShowWinnerModal(true);
         pendingWinnerRef.current = null;
@@ -608,7 +608,7 @@ const AdminPanel = () => {
                   const rows = winners.map((w) => [
                     esc(String(w.roundNumber)),
                     esc(`${w.participantId}-${w.participantName}`),
-                    esc(`${w.prizeAmount.toLocaleString()} THB`),
+                    esc(w.prizeAmount.toLocaleString()),
                     esc(w.timestamp ? new Date(w.timestamp).toLocaleString('th-TH') : ''),
                   ].join(','));
                   const csv = '\uFEFF' + [headers.map(esc).join(','), ...rows].join('\r\n');

@@ -92,7 +92,7 @@ function App() {
         participantId: data.winner.participantId,
         username: data.winner.participantName,
         prize: data.winner.prize,
-        reward: `${data.winner.prizeAmount.toLocaleString()} THB`,
+        reward: data.winner.prizeAmount.toLocaleString(),
       };
 
       pendingWinnerRef.current = { winnerData, participantId: data.winner.participantId };
@@ -124,7 +124,7 @@ function App() {
           participantId: w.participantId,
           username: w.participantName,
           prize: w.prize,
-          reward: `${w.prizeAmount.toLocaleString()} THB`,
+          reward: w.prizeAmount.toLocaleString(),
           timestamp: ts ? new Date(ts).toISOString() : undefined,
         };
       });

@@ -40,6 +40,11 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
   const [dimensions, setDimensions] = useState<Dimensions>({ width: 500, height: 500 });
   const pointerRef = useRef<PointerState>({ angle: 0, vel: 0 });
   const [hubPressed, setHubPressed] = useState(false);
+  // Pre-rendered static wheel (segments + rim + pins) on offscreen canvas.
+  // We rotate this whole image instead of redrawing 500+ paths every frame.
+  const wheelLayerRef = useRef<HTMLCanvasElement | null>(null);
+  // Last tick time — throttle audio so 500-segment wheels don't fire 200+ ticks/s.
+  const lastTickAtRef = useRef(0);
 
   const segments = useMemo((): Segment[] => {
     // Songkran color pairs: deep ocean / light water
@@ -275,7 +280,13 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
         const vel = (totalRotation / spinDuration) * Math.exp(-5 * (progress / (progress < 0.75 ? 0.75 : 1)));
         const pr = pointerRef.current;
         if (tickCrossed) {
-          playTick();
+          // Rate-limit audio so dense wheels (500+ segs) don't fire ticks
+          // 200+ times/sec — that crashes the audio stack and sounds like noise.
+          const now = Date.now();
+          if (now - lastTickAtRef.current >= 40) {
+            playTick();
+            lastTickAtRef.current = now;
+          }
           pr.vel += Math.min(vel * 600, 35);
         }
         pr.vel += -pr.angle * 0.22;
@@ -300,28 +311,33 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
   // Layout
   const hubR = dimensions.width / 9;
 
+  // Pre-render the static wheel (segments + rim + pins) once per
+  // segments/dimensions change. Frame loop just rotates this image.
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     const W = dimensions.width;
     const cx = W / 2;
     const cy = W / 2;
     const rimThick = W * 0.03;
     const radius = cx - rimThick - 8;
 
-    ctx.clearRect(0, 0, W, W);
+    const off = document.createElement('canvas');
+    off.width = W;
+    off.height = W;
+    const ctx = off.getContext('2d');
+    if (!ctx) return;
 
     const N = segments.length;
     const segRad = (2 * Math.PI) / N;
     const arcLen = segRad * radius;
     const fontSize = Math.max(Math.min(arcLen * 0.5, W / 28), 3);
+    // Skip per-segment labels when they would be unreadable (<6px) — saves
+    // hundreds of fillText calls on dense wheels (500+ participants).
+    const drawLabels = fontSize >= 6;
 
-    // 1) Segments
-    segments.forEach((seg, i) => {
-      const a0 = i * segRad + (rotation * Math.PI) / 180;
+    // 1) Segments — draw at rotation 0; main canvas rotates the image.
+    for (let i = 0; i < N; i++) {
+      const seg = segments[i];
+      const a0 = i * segRad;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, radius, a0, a0 + segRad);
@@ -329,39 +345,41 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       ctx.fillStyle = seg.color;
       ctx.fill();
 
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(a0 + segRad / 2);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = seg.color === '#1C1C1C' ? 'rgba(210,185,130,0.55)' : 'rgba(50,50,50,0.4)';
-      ctx.font = `bold ${fontSize}px Orbitron, sans-serif`;
-      ctx.fillText(seg.label, radius - 20, fontSize / 3);
-      ctx.restore();
-    });
+      if (drawLabels) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(a0 + segRad / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = seg.color === '#1C1C1C' ? 'rgba(210,185,130,0.55)' : 'rgba(50,50,50,0.4)';
+        ctx.font = `bold ${fontSize}px Orbitron, sans-serif`;
+        ctx.fillText(seg.label, radius - 20, fontSize / 3);
+        ctx.restore();
+      }
+    }
 
-    // 2) Gold rim — simple solid gold ring
+    // 2) Gold rim
     ctx.beginPath();
     ctx.arc(cx, cy, radius + rimThick / 2, 0, 2 * Math.PI);
     ctx.strokeStyle = '#B8860B';
     ctx.lineWidth = rimThick;
     ctx.stroke();
-    // Bright inner edge
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
     ctx.strokeStyle = '#D4A017';
     ctx.lineWidth = 2;
     ctx.stroke();
-    // Dark outer edge
     ctx.beginPath();
     ctx.arc(cx, cy, radius + rimThick, 0, 2 * Math.PI);
     ctx.strokeStyle = '#6B5310';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // 3) Tick pins
+    // 3) Tick pins — stride so the visual count tops out around 120 even
+    // on huge wheels (otherwise pins overlap into a solid ring anyway).
     const pinR = Math.max(Math.min(segRad * radius * 0.06, 5), 2.5);
-    for (let i = 0; i < N; i++) {
-      const a = i * segRad + (rotation * Math.PI) / 180;
+    const pinStride = Math.max(1, Math.floor(N / 120));
+    for (let i = 0; i < N; i += pinStride) {
+      const a = i * segRad;
       const pr = radius + rimThick / 2;
       const px = cx + Math.cos(a) * pr;
       const py = cy + Math.sin(a) * pr;
@@ -374,7 +392,32 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       ctx.stroke();
     }
 
-    // 4) Center hub — gold ring + dark circle
+    wheelLayerRef.current = off;
+  }, [segments, dimensions]);
+
+  // Per-frame compositor: draw cached wheel rotated, then pointer/hub on top.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = dimensions.width;
+    const cx = W / 2;
+    const cy = W / 2;
+
+    ctx.clearRect(0, 0, W, W);
+
+    const layer = wheelLayerRef.current;
+    if (layer) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.drawImage(layer, -cx, -cy);
+      ctx.restore();
+    }
+
+    // Center hub + pointer triangle (rotates with pointerAngle)
     const hr = hubR;
     const hubBorder = 5;
 
@@ -382,38 +425,34 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
     ctx.translate(cx, cy);
     ctx.rotate((pointerAngle * Math.PI) / 180);
 
-    // Pointer triangle — sharp tip, flat bottom (no rounded corners)
     const ptrH = hr * 0.6;
     const ptrW = hr * 0.22;
     ctx.beginPath();
-    ctx.moveTo(0, -hr - hubBorder - ptrH); // tip
-    ctx.lineTo(ptrW, -hr - hubBorder + 2);  // bottom-right
-    ctx.lineTo(-ptrW, -hr - hubBorder + 2); // bottom-left
+    ctx.moveTo(0, -hr - hubBorder - ptrH);
+    ctx.lineTo(ptrW, -hr - hubBorder + 2);
+    ctx.lineTo(-ptrW, -hr - hubBorder + 2);
     ctx.closePath();
     ctx.lineJoin = 'miter';
     ctx.fillStyle = '#D4A017';
     ctx.fill();
 
-    // Gold ring
     ctx.beginPath();
     ctx.arc(0, 0, hr + hubBorder, 0, 2 * Math.PI);
     ctx.fillStyle = '#B8860B';
     ctx.fill();
-    // Bright highlight (top-left)
     ctx.beginPath();
     ctx.arc(0, 0, hr + hubBorder, -Math.PI * 0.8, -Math.PI * 0.2);
     ctx.strokeStyle = '#D4A017';
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Dark center
     ctx.beginPath();
     ctx.arc(0, 0, hr, 0, 2 * Math.PI);
     ctx.fillStyle = '#1A1A1A';
     ctx.fill();
 
     ctx.restore();
-  }, [rotation, segments, dimensions, hubR, pointerAngle]);
+  }, [rotation, dimensions, hubR, pointerAngle]);
 
   useEffect(() => {
     return () => {
