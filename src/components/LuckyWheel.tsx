@@ -222,7 +222,9 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
       setTimeout(() => setHubPressed(false), 200);
 
       setIsSpinning(true);
-      const spinDuration = 20000 + Math.random() * 5000;
+      // Fixed duration so the server-side spin-ended timer (21s) lines up
+      // with every viewer's animation.
+      const spinDuration = 20000;
       const startRotation = rotation;
       const fullRotations = 360 * (15 + Math.floor(Math.random() * 5));
       const currentMod = ((startRotation % 360) + 360) % 360;

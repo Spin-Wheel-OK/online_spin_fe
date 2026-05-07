@@ -32,6 +32,9 @@ function App() {
   const pendingWinnerRef = useRef<{ winnerData: WinnerDisplay; participantId: string } | null>(null);
   const lastWinnerIdRef = useRef<string | null>(null);
   const pendingStateWinnersRef = useRef<WinnerDisplay[] | null>(null);
+  const animationDoneRef = useRef(false);
+  const serverSpinEndedRef = useRef(false);
+  const revealPendingWinnerRef = useRef<() => void>(() => {});
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeMuted, setWelcomeMuted] = useState(true);
   const welcomeVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -92,6 +95,8 @@ function App() {
       };
 
       pendingWinnerRef.current = { winnerData, participantId: data.winner.participantId };
+      animationDoneRef.current = false;
+      serverSpinEndedRef.current = false;
 
       const ws = data.wheelSegments;
       const segCount = ws?.length ?? 8;
@@ -102,6 +107,15 @@ function App() {
       const clientSpinResult = ((270 - segCenter + randomOffset) % 360 + 360) % 360;
 
       wheelRef.current?.spinToResult(clientSpinResult, segCount);
+    });
+
+    // BE drives spin-ended via a server-side timer. Only reveal the winner
+    // once BOTH the local animation has finished AND the server signals.
+    socket.on('spin-ended', () => {
+      serverSpinEndedRef.current = true;
+      if (animationDoneRef.current) {
+        revealPendingWinnerRef.current();
+      }
     });
 
     socket.on('state-update', (data) => {
@@ -155,6 +169,7 @@ function App() {
       socket.off('round-selected');
       socket.off('spin-start');
       socket.off('spin-result');
+      socket.off('spin-ended');
       socket.off('state-update');
       socket.off('dismiss-winner');
       socket.off('error');
@@ -163,29 +178,37 @@ function App() {
     };
   }, []);
 
+  const revealPendingWinner = useCallback(() => {
+    const pending = pendingWinnerRef.current;
+    if (!pending) return;
+    setCurrentWinner(pending.winnerData);
+    setShowModal(true);
+    playCrowd();
+    lastWinnerIdRef.current = pending.participantId;
+    const deferred = pendingStateWinnersRef.current;
+    if (deferred) {
+      setWinners(deferred);
+      pendingStateWinnersRef.current = null;
+    } else {
+      setWinners(prev => {
+        const exists = prev.some(w => w.participantId === pending.winnerData.participantId && w.number === pending.winnerData.number);
+        return exists ? prev : [...prev, pending.winnerData];
+      });
+    }
+    pendingWinnerRef.current = null;
+  }, []);
+
+  // Keep the ref pointed at the latest revealPendingWinner so the
+  // socket handler (registered once in mount effect) calls the live closure.
+  revealPendingWinnerRef.current = revealPendingWinner;
+
   const handleSpinEnd = useCallback(() => {
     setIsSpinning(false);
-    const pending = pendingWinnerRef.current;
-    if (pending) {
-      setCurrentWinner(pending.winnerData);
-      setShowModal(true);
-      playCrowd();
-      lastWinnerIdRef.current = pending.participantId;
-      // Apply deferred state-update winners if any, otherwise add locally
-      const deferred = pendingStateWinnersRef.current;
-      if (deferred) {
-        setWinners(deferred);
-        pendingStateWinnersRef.current = null;
-      } else {
-        setWinners(prev => {
-          const exists = prev.some(w => w.participantId === pending.winnerData.participantId && w.number === pending.winnerData.number);
-          return exists ? prev : [...prev, pending.winnerData];
-        });
-      }
-      pendingWinnerRef.current = null;
+    animationDoneRef.current = true;
+    if (serverSpinEndedRef.current) {
+      revealPendingWinner();
     }
-    socket.emit('spin-ended');
-  }, []);
+  }, [revealPendingWinner]);
 
   // Build round label with translation
   const headerTitle = currentRoundLabel

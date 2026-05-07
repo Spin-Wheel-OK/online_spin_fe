@@ -62,7 +62,6 @@ export interface ClientToServerEvents {
   'update-rounds': (rounds: IRound[]) => void;
   'select-round': (data: { roundNumber: number; prize: string; prizeAmount: number }) => void;
   'select-session': (data: { sessionId: string | null }) => void;
-  'spin-ended': () => void;
   'dismiss-winner': () => void;
   'welcome-mode': (data: { enabled: boolean }) => void;
 }
