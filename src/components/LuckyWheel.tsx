@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { playTick } from '../audio';
-const okvipLogo = '/OKVIP-LOGO.png';
+const centerLogo = '/PKONE_LOGO.png';
 
 interface Segment {
   number: number;
@@ -472,7 +472,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
         onDragStart={e => e.preventDefault()}
       />
 
-      {/* OKVIP logo — click/press animation on spin start */}
+      {/* Center logo — click/press animation on spin start */}
       <div
         className="absolute top-1/2 left-1/2 z-20 select-none rounded-full flex items-center justify-center"
         style={{
@@ -483,7 +483,7 @@ const LuckyWheel = forwardRef<{ spin: () => void; spinToResult: (spinResult: num
           filter: hubPressed ? 'brightness(1.3)' : 'brightness(1)',
         }}
       >
-        <img src={okvipLogo} alt="OKVIP Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
+        <img src={centerLogo} alt="PKONE Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
       </div>
     </div>
   );

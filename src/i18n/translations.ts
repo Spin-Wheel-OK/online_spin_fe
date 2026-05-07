@@ -39,10 +39,10 @@ const translations = {
 
   // ─── Viewer (App.tsx) ──────────────────────
   blessingMessage: {
-    th: 'OKVIP ขออวยพรให้พนักงานทุกท่านและครอบครัว เปี่ยมด้วยความสุข สุขภาพแข็งแรง และความสำเร็จในทุกย่างก้าว สุขสันต์วันสงกรานต์',
-    en: 'OKVIP wishes all employees and families happiness, good health, and success in life and work. Happy Songkran!',
-    zh: 'OKVIP 祝所有员工及家人幸福快乐、身体健康、事业与生活双丰收！泼水节快乐！',
-    id: 'OKVIP mendoakan semua karyawan dan keluarga selalu bahagia, sehat, dan sukses dalam hidup dan pekerjaan. Selamat Hari Songkran!',
+    th: 'PKONE ขออวยพรให้พนักงานทุกท่านและครอบครัว เปี่ยมด้วยความสุข สุขภาพแข็งแรง และความสำเร็จในทุกย่างก้าว สุขสันต์วันสงกรานต์',
+    en: 'PKONE wishes all employees and families happiness, good health, and success in life and work. Happy Songkran!',
+    zh: 'PKONE 祝所有员工及家人幸福快乐、身体健康、事业与生活双丰收！泼水节快乐！',
+    id: 'PKONE mendoakan semua karyawan dan keluarga selalu bahagia, sehat, dan sukses dalam hidup dan pekerjaan. Selamat Hari Songkran!',
   },
   defaultTitle: { th: 'Lucky Wheel Reward', en: 'Lucky Wheel Reward', zh: 'Lucky Wheel Reward', id: 'Lucky Wheel Reward' },
   roundLabel: { th: 'รางวัลที่ {n} — {prize}', en: 'Prize {n} — {prize}', zh: '奖项 {n} — {prize}', id: 'Hadiah {n} — {prize}' },
