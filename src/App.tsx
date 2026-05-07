@@ -32,6 +32,7 @@ function App() {
   const pendingWinnerRef = useRef<{ winnerData: WinnerDisplay; participantId: string } | null>(null);
   const lastWinnerIdRef = useRef<string | null>(null);
   const pendingStateWinnersRef = useRef<WinnerDisplay[] | null>(null);
+  const pendingStateParticipantsRef = useRef<IParticipant[] | null>(null);
   const animationDoneRef = useRef(false);
   const serverSpinEndedRef = useRef(false);
   const revealPendingWinnerRef = useRef<() => void>(() => {});
@@ -96,17 +97,14 @@ function App() {
 
       pendingWinnerRef.current = { winnerData, participantId: data.winner.participantId };
       animationDoneRef.current = false;
-      serverSpinEndedRef.current = false;
+      // Do NOT reset serverSpinEndedRef here — if the events arrive
+      // out of order (spin-ended before spin-result on a flaky network),
+      // resetting would drop the signal and the winner modal would never open.
 
-      const ws = data.wheelSegments;
-      const segCount = ws?.length ?? 8;
-      const segAngle = 360 / segCount;
-      const idx = data.winnerWheelIndex ?? 0;
-      const segCenter = idx * segAngle + segAngle / 2;
-      const randomOffset = (Math.random() - 0.5) * segAngle * 0.6;
-      const clientSpinResult = ((270 - segCenter + randomOffset) % 360 + 360) % 360;
-
-      wheelRef.current?.spinToResult(clientSpinResult, segCount);
+      // Use the angle BE computed so every viewer's wheel stops at the
+      // exact same spot — no per-client randomness.
+      const segCount = data.wheelSegments?.length ?? 8;
+      wheelRef.current?.spinToResult(data.winner.spinResult, segCount);
     });
 
     // BE drives spin-ended via a server-side timer. Only reveal the winner
@@ -119,7 +117,6 @@ function App() {
     });
 
     socket.on('state-update', (data) => {
-      setParticipants(data.participants ?? []);
       const mapped: WinnerDisplay[] = (data.winners ?? []).map((w: { roundNumber: number; participantId: string; participantName: string; prize: string; prizeAmount: number; timestamp?: string | Date; createdAt?: string | Date }) => {
         const ts = w.timestamp ?? w.createdAt;
         return {
@@ -131,10 +128,14 @@ function App() {
           timestamp: ts ? new Date(ts).toISOString() : undefined,
         };
       });
-      // If wheel is spinning, defer winners update until spin ends
+      // While a spin is mid-flight, defer BOTH participants and winners.
+      // Participant changes during a spin would re-render the wheel and
+      // shift the winner segment off the pointer.
       if (pendingWinnerRef.current) {
+        pendingStateParticipantsRef.current = data.participants ?? [];
         pendingStateWinnersRef.current = mapped;
       } else {
+        setParticipants(data.participants ?? []);
         setWinners(mapped);
       }
       if (!data.participants?.length && !data.winners?.length) {
@@ -195,7 +196,15 @@ function App() {
         return exists ? prev : [...prev, pending.winnerData];
       });
     }
+    const deferredParticipants = pendingStateParticipantsRef.current;
+    if (deferredParticipants) {
+      setParticipants(deferredParticipants);
+      pendingStateParticipantsRef.current = null;
+    }
     pendingWinnerRef.current = null;
+    // Clear the gate flags only after the reveal so the next spin starts fresh.
+    serverSpinEndedRef.current = false;
+    animationDoneRef.current = false;
   }, []);
 
   // Keep the ref pointed at the latest revealPendingWinner so the
